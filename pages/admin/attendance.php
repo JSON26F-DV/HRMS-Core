@@ -4,6 +4,7 @@ requireAdmin();
 $pageTitle = 'Attendance Management | HRMS Core';
 $currentPage = 'attendance';
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/pagination.php';
 
 $msg = $error = '';
 $today = date('Y-m-d');
@@ -115,6 +116,11 @@ if ($hView)
     $_SESSION['history_view'] = $hView;
 $historyRows = [];
 
+// History pagination
+$histPerPage = 20;
+$histCurrentPage = max(1, (int)($_GET['h_page'] ?? 1));
+$histOffset = ($histCurrentPage - 1) * $histPerPage;
+
 if ($hView === 'date') {
     $hDateFrom = $_GET['h_date_from'] ?? $_SESSION['history_date_from'] ?? '';
     $hDateTo = $_GET['h_date_to'] ?? $_SESSION['history_date_to'] ?? '';
@@ -131,8 +137,17 @@ if ($hView === 'date') {
             $w[] = "a.date <= ?";
             $p[] = $hDateTo;
         }
-        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id WHERE " . implode(' AND ', $w) . " ORDER BY a.date DESC, e.last_name");
-        $stmt->execute($p);
+        $whereClause = implode(' AND ', $w);
+        // Count total
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance a WHERE $whereClause");
+        $countStmt->execute($p);
+        $histTotalCount = $countStmt->fetchColumn();
+        // Fetch with pagination
+        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id WHERE $whereClause ORDER BY a.date DESC, e.last_name LIMIT :limit OFFSET :offset");
+        foreach ($p as $i => $val) { $stmt->bindValue($i + 1, $val); }
+        $stmt->bindValue('limit', $histPerPage, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $histOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $historyRows = $stmt->fetchAll();
     }
 } elseif ($hView === 'emp') {
@@ -155,11 +170,23 @@ if ($hView === 'date') {
             $w[] = "a.date <= ?";
             $p[] = $hDateTo;
         }
-        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id WHERE " . implode(' AND ', $w) . " ORDER BY a.date DESC, e.last_name");
-        $stmt->execute($p);
+        $whereClause = implode(' AND ', $w);
+        // Count total
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance a WHERE $whereClause");
+        $countStmt->execute($p);
+        $histTotalCount = $countStmt->fetchColumn();
+        // Fetch with pagination
+        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id WHERE $whereClause ORDER BY a.date DESC, e.last_name LIMIT :limit OFFSET :offset");
+        foreach ($p as $i => $val) { $stmt->bindValue($i + 1, $val); }
+        $stmt->bindValue('limit', $histPerPage, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $histOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $historyRows = $stmt->fetchAll();
     }
 }
+
+$histPagination = paginate($histCurrentPage, $histTotalCount ?? 0, $histPerPage, $_SERVER['REQUEST_URI'], 'h_page');
+$histPagination['base_url'] = preg_replace('/[?&]h_page=\d+/', '', $histPagination['base_url']);
 
 // Export CSV
 if (isset($_GET['export'])) {
@@ -561,6 +588,7 @@ if (isset($_GET['export'])) {
                         </tbody>
                     </table>
                 </div>
+                <?= renderPaginationCompact($histPagination) ?>
             <?php endif; ?>
         </div>
     </div>
