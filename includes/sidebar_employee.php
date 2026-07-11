@@ -1,26 +1,36 @@
-<aside class="h-[calc(100%-4rem)] w-64 fixed left-0 top-16 bg-neutral-primary-soft border-r border-default flex flex-col py-4 px-3 z-40">
-    <div class="mb-10 px-4">
-        <h1 class="font-headline-md text-headline-md font-bold text-on-surface">HRMS Core</h1>
-        <p class="text-secondary text-sm">Employee Portal</p>
-    </div>
-    <nav class="flex-grow space-y-1 overflow-y-auto no-scrollbar">
-        <a class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'employee_dashboard' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>" href="<?= BASE_URL ?>/employee/dashboard">
-            <span class="material-symbols-outlined mr-3 <?= $currentPage === 'employee_dashboard' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">dashboard</span>
-            <span class="font-body-md">Dashboard</span>
-        </a>
-        <a class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'my_payslips' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>" href="<?= BASE_URL ?>/employee/my_payslips">
-            <span class="material-symbols-outlined mr-3 <?= $currentPage === 'my_payslips' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">payments</span>
-            <span class="font-body-md">My Payslips</span>
-        </a>
-        <a class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'employee_profile' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>" href="<?= BASE_URL ?>/employee/profile">
-            <span class="material-symbols-outlined mr-3 <?= $currentPage === 'employee_profile' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">person</span>
-            <span class="font-body-md">My Profile</span>
-        </a>
-    </nav>
-    <div class="mt-auto pt-6 border-t border-border-subtle">
-        <a href="<?= BASE_URL ?>/logout" class="flex items-center px-4 py-3 text-secondary hover:text-error transition-colors rounded-lg">
-            <span class="material-symbols-outlined mr-3">logout</span>
-            <span class="font-body-md">Logout</span>
-        </a>
-    </div>
+<aside id="default-sidebar" class="fixed top-16 left-0 z-40 w-64 h-[calc(100%-4rem)] transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
+   <div class="h-full px-3 py-4 overflow-y-auto bg-neutral-primary-soft border-e border-default">
+      <ul class="space-y-2 font-medium">
+         <li>
+            <a href="<?= BASE_URL ?>/employee/dashboard" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'employee_dashboard' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6.025A7.5 7.5 0 1 0 17.975 14H10V6.025Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 3c-.169 0-.334.014-.5.025V11h7.975c.011-.166.025-.331.025-.5A7.5 7.5 0 0 0 13.5 3Z"/></svg>
+               <span class="ms-3">Dashboard</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/employee/request-leave" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'request_leave' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10"/></svg>
+               <span class="ms-3">Request Leave</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/employee/my-payslips" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'my_payslips' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v14M9 5v14M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>
+               <span class="ms-3">My Payslips</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/employee/performance" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'employee_performance' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 16l4-8 4 4 8-8"/></svg>
+               <span class="ms-3">My Performance</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/employee/profile" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'employee_profile' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M16 19h4a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-2m-2.236-4a3 3 0 1 0 0-4M3 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+               <span class="ms-3">My Profile</span>
+            </a>
+         </li>
+      </ul>
+   </div>
 </aside>

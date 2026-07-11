@@ -37,7 +37,9 @@ if ($filter === '1year') {
         SELECT 
             DATE_FORMAT(date, '%b %Y') as label,
             SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
-            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count,
+            SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count,
+            SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_count
         FROM attendance 
         WHERE date >= '$startDate'
         GROUP BY DATE_FORMAT(date, '%Y-%m')
@@ -49,7 +51,9 @@ if ($filter === '1year') {
         SELECT 
             CONCAT('Week ', FLOOR(DATEDIFF(date, '$startDate') / 7) + 1) as label,
             SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
-            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count,
+            SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count,
+            SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_count
         FROM attendance 
         WHERE date >= '$startDate'
         GROUP BY FLOOR(DATEDIFF(date, '$startDate') / 7)
@@ -61,7 +65,9 @@ if ($filter === '1year') {
         SELECT 
             DATE_FORMAT(date, '%a') as label,
             SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
-            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count,
+            SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count,
+            SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END) as half_count
         FROM attendance 
         WHERE date >= '$startDate'
         GROUP BY date
@@ -78,14 +84,14 @@ $departmentData = $pdo->query("
     ORDER BY d.name
 ")->fetchAll();
 
-// Get latest audit log
-$latestAudit = $pdo->query("
+// Get latest audit logs
+$latestAudits = $pdo->query("
     SELECT al.*, u.email as user_email
     FROM audit_logs al
     LEFT JOIN users u ON al.user_id = u.id
     ORDER BY al.created_at DESC
     LIMIT 1
-")->fetch();
+")->fetchAll();
 
 // Get unpaid attendance count and recent records
 $unpaidCount = $pdo->query("SELECT COUNT(*) FROM attendance WHERE pay_status = 'unpaid'")->fetchColumn();
@@ -107,11 +113,11 @@ $unpaidAttendance = $pdo->query("
         </div>
         <div class="d-flex gap-2">
             <a href="<?= BASE_URL ?>/admin/leave-management"
-                class="btn   align-items-center gap-2 px-4 py-2 rounded-lg!">
+                class="bg-green-400 hover:bg-green-500 text-white rounded-lg d-inline-flex align-items-center gap-2 px-4 py-2">
                 <span class="material-symbols-outlined text-lg">time_to_leave</span>
                 File Leave
             </a>
-            <a href="<?= BASE_URL ?>/admin/add-employee" class="btn align-items-center gap-2 px-4 py-2 rounded-lg!">
+            <a href="<?= BASE_URL ?>/admin/add-employee" class="bg-green-400 hover:bg-green-500 text-white rounded-lg d-inline-flex align-items-center gap-2 px-4 py-2">
                 <span class="material-symbols-outlined text-lg">person_add</span>
                 Add Employee
             </a>
@@ -290,42 +296,44 @@ $unpaidAttendance = $pdo->query("
                 </div>
             </div>
             <!-- Recent Activity -->
-            <div class="flex-1 bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-border-subtle flex flex-col">
-                <div class="flex items-center justify-between mb-2">
+            <div class="flex-1 bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-border-subtle flex flex-col">
+                <div class="flex items-center justify-between mb-3">
                     <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
                     <a class="text-primary text-xs font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
                 </div>
-                <div class="flex-1 flex items-center">
-                    <?php if ($latestAudit): ?>
-                    <div class="flex gap-2 p-2 hover:bg-surface-muted rounded-lg transition-colors w-full">
-                        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span class="material-symbols-outlined text-primary text-xs">history</span>
+                <div class="flex-1 space-y-2">
+                    <?php if (!empty($latestAudits)): ?>
+                    <?php foreach ($latestAudits as $audit): ?>
+                    <div class="flex gap-3 p-3 hover:bg-surface-muted rounded-lg transition-colors w-full">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-primary text-sm">history</span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs text-on-surface truncate"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
-                            <p class="text-xs text-secondary/70"><?= date('M d, h:i A', strtotime($latestAudit['created_at'])) ?></p>
+                            <p class="text-sm text-on-surface truncate"><strong><?= h($audit['user_email'] ?? 'System') ?></strong> <?= h($audit['action']) ?></p>
+                            <p class="text-xs text-secondary/70"><?= date('M d, h:i A', strtotime($audit['created_at'])) ?></p>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                     <?php else: ?>
-                    <div class="text-center text-secondary py-2 text-xs w-full">No recent activity</div>
+                    <div class="text-center text-secondary py-8 text-sm w-full">No recent activity</div>
                     <?php endif; ?>
                 </div>
             </div>
             <!-- Upcoming Event -->
-            <div class="flex-1 bg-gradient-to-br from-primary to-on-primary-container p-4 rounded-2xl shadow-md text-white flex flex-col">
-                <div class="flex items-center gap-2 mb-2">
-                    <img src="<?= BASE_URL ?>/public/emojis/party-popper_1f389.png" class="w-6 h-6" alt="present">
-                    <span class="text-xs uppercase tracking-wider font-bold opacity-80">Upcoming Holiday</span>
+            <div class="flex-1 bg-gradient-to-br from-primary to-on-primary-container p-6 rounded-2xl shadow-md text-white flex flex-col min-h-[140px]">
+                <div class="flex items-center gap-2 mb-3">
+                    <img src="<?= BASE_URL ?>/public/emojis/party-popper_1f389.png" class="w-7 h-7" alt="present">
+                    <span class="text-sm uppercase tracking-wider font-bold opacity-80">Upcoming Holiday</span>
                 </div>
                 <div class="flex-1 flex items-center">
                     <div class="flex justify-between items-start w-full">
                         <div>
-                            <h5 class="font-headline-md text-headline-md">Labor Day</h5>
-                            <p class="text-xs opacity-90">Monday, May 1, 2024</p>
+                            <h5 class="font-headline-lg text-headline-lg">Labor Day</h5>
+                            <p class="text-sm opacity-90 mt-1">Monday, May 1, 2024</p>
                         </div>
                         <div class="text-right">
-                            <span class="text-headline-lg font-headline-lg block leading-none">12</span>
-                            <span class="text-xs uppercase tracking-widest font-bold opacity-80">Days Left</span>
+                            <span class="text-display-lg font-headline-lg block leading-none">12</span>
+                            <span class="text-sm uppercase tracking-widest font-bold opacity-80">Days Left</span>
                         </div>
                     </div>
                 </div>
@@ -353,6 +361,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const labels = attendanceData.map(d => d.label);
         const presentData = attendanceData.map(d => parseInt(d.present_count) || 0);
         const absentData = attendanceData.map(d => parseInt(d.absent_count) || 0);
+        const lateData = attendanceData.map(d => parseInt(d.late_count) || 0);
+        const halfData = attendanceData.map(d => parseInt(d.half_count) || 0);
         
         new Chart(attendanceCtx, {
             type: 'bar',
@@ -363,6 +373,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         label: 'Present',
                         data: presentData,
                         backgroundColor: '#6366f1',
+                        borderRadius: 6,
+                        barThickness: 24,
+                    },
+                    {
+                        label: 'Late',
+                        data: lateData,
+                        backgroundColor: '#facc15',
+                        borderRadius: 6,
+                        barThickness: 24,
+                    },
+                    {
+                        label: 'Half Day',
+                        data: halfData,
+                        backgroundColor: '#fb923c',
                         borderRadius: 6,
                         barThickness: 24,
                     },

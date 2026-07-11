@@ -43,14 +43,7 @@
                <span class="ms-3">Performance</span>
             </a>
          </li>
-         <li>
-            <a href="<?= BASE_URL ?>/admin/audit-logs" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'audit_logs' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
-               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H4m12 0-4 4m4-4-4-4m3-4h2a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-2"/></svg>
-               <span class="ms-3">Audit Logs</span>
-            </a>
-         </li>
-
-         <li>
+          <li>
             <a href="<?= BASE_URL ?>/admin/system-settings" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'system_settings' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
                <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 1.5"/></svg>
                <span class="ms-3">Settings</span>

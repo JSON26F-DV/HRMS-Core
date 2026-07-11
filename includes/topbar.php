@@ -13,6 +13,11 @@
       </a>
     </div>
     <div class="flex items-center space-x-3">
+      <?php if ($role === 'admin'): ?>
+      <a href="<?= BASE_URL ?>/admin/audit-logs" class="w-8 h-8 rounded-lg flex items-center justify-center text-body hover:bg-neutral-secondary-soft hover:text-heading transition-colors <?= $currentPage === 'audit_logs' ? 'bg-neutral-secondary-soft text-heading' : '' ?>" title="Audit Logs">
+        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H4m12 0-4 4m4-4-4-4m3-4h2a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-2"/></svg>
+      </a>
+      <?php endif; ?>
       <button type="button" class="flex text-sm bg-neutral-primary rounded-full focus:ring-4 focus:ring-neutral-tertiary" id="user-menu-button" onclick="toggleDropdown()">
         <span class="sr-only">Open user menu</span>
         <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold">

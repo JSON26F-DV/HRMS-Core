@@ -377,6 +377,9 @@ $prows = $payrolls->fetchAll();
                                     Out</th>
                                 <th
                                     class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">
+                                    Late</th>
+                                <th
+                                    class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">
                                     Daily Pay</th>
                                 <th
                                     class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">
@@ -413,6 +416,7 @@ $prows = $payrolls->fetchAll();
                                     <tr class="hover:bg-surface-muted transition-colors border-b border-border-subtle">
                                         <td class="px-4 py-2"><input type="checkbox" name="employee_ids[]" value="<?= $eid ?>"
                                                 class="emp-cb emp-<?= $eid ?>"></td>
+                                        <td class="px-4 py-2"></td>
                                         <td class="px-4 py-2 text-body-sm"><?= h($r['date']) ?></td>
                                         <td class="px-4 py-2">
                                             <span
@@ -423,11 +427,14 @@ $prows = $payrolls->fetchAll();
                                         <td class="px-4 py-2 font-mono text-body-sm"><?= $minutesLate ?>m
                                         </td>
                                         <td class="px-4 py-2 font-mono text-body-sm">₱<?= number_format($rate, 2) ?></td>
+                                        <td class="px-4 py-2 font-mono text-body-sm">₱<?= number_format($dayPay, 2) ?>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                                 <tr class="border-b border-border-subtle bg-surface-muted/50">
                                     <td class="px-4 py-2" colspan="4"></td>
                                     <td class="px-4 py-2 font-mono font-bold text-body-sm">Sub: <?= $totalD ?>d</td>
+                                    <td class="px-4 py-2"></td>
                                     <td class="px-4 py-2 font-mono font-bold text-body-sm"><?= $totalLate ?>m
                                     </td>
                                     <td class="px-4 py-2"></td>
@@ -515,7 +522,8 @@ $prows = $payrolls->fetchAll();
                                 <td class="px-6 py-4 text-right font-mono"><?= $p['days_worked'] ?: 0 ?></td>
                                 <td class="px-6 py-4 text-right font-mono"><?= number_format($p['total_hours'] ?: 0, 1) ?></td>
                                 <td class="px-6 py-4 text-right font-mono">
-                                    <?= ($p['total_late_minutes'] ?? 0) ? $p['total_late_minutes'] . 'm' : '—' ?></td>
+                                    <?= ($p['total_late_minutes'] ?? 0) ? $p['total_late_minutes'] . 'm' : '—' ?>
+                                </td>
                                 <td class="px-6 py-4 text-right font-mono text-red-600">
                                     ₱<?= number_format($p['deductions'], 2) ?></td>
                                 <td class="px-6 py-4 text-right font-mono font-bold">₱<?= number_format($p['net_pay'], 2) ?>

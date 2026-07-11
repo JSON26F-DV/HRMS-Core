@@ -33,6 +33,8 @@ $routes = [
     '/employee/dashboard'           => 'pages/employee/dashboard.php',
     '/employee/my-payslips'         => 'pages/employee/my_payslips.php',
     '/employee/profile'             => 'pages/employee/profile.php',
+    '/employee/request-leave'       => 'pages/employee/request_leave.php',
+    '/employee/performance'         => 'pages/employee/performance.php',
 ];
 
 if (isset($routes[$request])) {
