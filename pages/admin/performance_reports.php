@@ -4,14 +4,29 @@ requireAdmin();
 $pageTitle = 'Performance & Reports | HRMS Core';
 $currentPage = 'performance_reports';
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/pagination.php';
 
-$reviews = $pdo->query("
+$perPage = 10;
+$currentPageNum = max(1, (int)($_GET['page'] ?? 1));
+$offset = ($currentPageNum - 1) * $perPage;
+
+$totalCount = $pdo->query("SELECT COUNT(*) FROM performance_reviews")->fetchColumn();
+
+$stmt = $pdo->prepare("
     SELECT pr.*, e.first_name, e.last_name, e.employee_id, d.name as department_name
     FROM performance_reviews pr
     JOIN employees e ON pr.employee_id = e.id
     LEFT JOIN departments d ON e.department_id = d.id
     ORDER BY pr.created_at DESC
-")->fetchAll();
+    LIMIT :limit OFFSET :offset
+");
+$stmt->bindValue('limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$reviews = $stmt->fetchAll();
+
+$pagination = paginate($currentPageNum, $totalCount, $perPage, $_SERVER['REQUEST_URI'], 'page');
+$pagination['base_url'] = preg_replace('/[?&]page=\d+/', '', $pagination['base_url']);
 ?>
 <div class="max-w-7xl mx-auto space-y-8">
     <div class="flex justify-between items-end">
@@ -78,6 +93,7 @@ $reviews = $pdo->query("
                 </tbody>
             </table>
         </div>
+        <?= renderPaginationCompact($pagination) ?>
     </div>
 </div>
 <style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>

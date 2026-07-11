@@ -5,12 +5,111 @@ $pageTitle = 'Dashboard | HRMS Core';
 $currentPage = 'dashboard';
 require_once __DIR__ . '/../../includes/header.php';
 
+// Get filter from URL parameter (default: 7 days)
+$filter = $_GET['filter'] ?? '7days';
+
+// Calculate date range based on filter
+switch ($filter) {
+    case '1month':
+        $startDate = date('Y-m-d', strtotime('-30 days'));
+        $filterLabel = 'Last 30 Days';
+        break;
+    case '1year':
+        $startDate = date('Y-m-d', strtotime('-365 days'));
+        $filterLabel = 'Last 1 Year';
+        break;
+    default: // 7days
+        $startDate = date('Y-m-d', strtotime('-7 days'));
+        $filterLabel = 'Last 7 Days';
+}
+
 // Stats from DB
 $totalEmployees = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'active'")->fetchColumn();
 $presentToday = $pdo->query("SELECT COUNT(*) FROM attendance WHERE date = CURDATE() AND status = 'present'")->fetchColumn();
 $absentToday = $pdo->query("SELECT COUNT(*) FROM attendance WHERE date = CURDATE() AND status = 'absent'")->fetchColumn();
 $pendingLeave = $pdo->query("SELECT COUNT(*) FROM leaves WHERE status = 'pending'")->fetchColumn();
 $payrollMonth = $pdo->query("SELECT COALESCE(SUM(net_pay), 0) FROM payroll WHERE MONTH(period_start) = MONTH(CURDATE()) AND YEAR(period_start) = YEAR(CURDATE())")->fetchColumn();
+
+// Get attendance data for chart based on filter
+if ($filter === '1year') {
+    // Group by month for yearly view
+    $attendanceData = $pdo->query("
+        SELECT 
+            DATE_FORMAT(date, '%b %Y') as label,
+            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+        FROM attendance 
+        WHERE date >= '$startDate'
+        GROUP BY DATE_FORMAT(date, '%Y-%m')
+        ORDER BY MIN(date)
+    ")->fetchAll();
+} elseif ($filter === '1month') {
+    // Group by week for monthly view
+    $attendanceData = $pdo->query("
+        SELECT 
+            CONCAT('Week ', FLOOR(DATEDIFF(date, '$startDate') / 7) + 1) as label,
+            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+        FROM attendance 
+        WHERE date >= '$startDate'
+        GROUP BY FLOOR(DATEDIFF(date, '$startDate') / 7)
+        ORDER BY MIN(date)
+    ")->fetchAll();
+} else {
+    // Group by day for 7 days view
+    $attendanceData = $pdo->query("
+        SELECT 
+            DATE_FORMAT(date, '%a') as label,
+            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+        FROM attendance 
+        WHERE date >= '$startDate'
+        GROUP BY date
+        ORDER BY date
+    ")->fetchAll();
+}
+
+// Get department distribution
+$departmentData = $pdo->query("
+    SELECT d.name, COUNT(e.id) as employee_count
+    FROM departments d
+    LEFT JOIN employees e ON d.id = e.department_id AND e.status = 'active'
+    GROUP BY d.id, d.name
+    HAVING employee_count > 0
+    ORDER BY employee_count DESC
+")->fetchAll();
+
+// Department colors
+$deptColors = [
+    '#6366f1', // Indigo
+    '#8b5cf6', // Violet
+    '#ec4899', // Pink
+    '#f59e0b', // Amber
+    '#10b981', // Emerald
+    '#06b6d4', // Cyan
+    '#ef4444', // Red
+    '#3b82f6', // Blue
+];
+
+// Get latest audit log
+$latestAudit = $pdo->query("
+    SELECT al.*, u.email as user_email
+    FROM audit_logs al
+    LEFT JOIN users u ON al.user_id = u.id
+    ORDER BY al.created_at DESC
+    LIMIT 1
+")->fetch();
+
+// Get unpaid attendance count and recent records
+$unpaidCount = $pdo->query("SELECT COUNT(*) FROM attendance WHERE pay_status = 'unpaid'")->fetchColumn();
+$unpaidAttendance = $pdo->query("
+    SELECT a.*, e.first_name, e.last_name, e.employee_id
+    FROM attendance a
+    JOIN employees e ON a.employee_id = e.id
+    WHERE a.pay_status = 'unpaid'
+    ORDER BY a.date DESC
+    LIMIT 5
+")->fetchAll();
 ?>
 <div class="max-w-7xl mx-auto space-y-8">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -111,60 +210,52 @@ $payrollMonth = $pdo->query("SELECT COALESCE(SUM(net_pay), 0) FROM payroll WHERE
             <div class="flex items-center justify-between mb-8">
                 <div>
                     <h4 class="font-headline-md text-headline-md">Attendance Overview</h4>
-                    <p class="text-label-md text-secondary">Daily attendance metrics for the current week</p>
+                    <p class="text-label-md text-secondary"><?= $filterLabel ?></p>
                 </div>
-                <select
-                    class="bg-surface-muted border-border-subtle rounded-lg text-label-sm py-1 pl-3 pr-8 focus:ring-primary">
-                    <option>Last 7 Days</option>
-                    <option>Last 30 Days</option>
-                </select>
+                <div class="flex gap-2">
+                    <a href="?filter=7days" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '7days' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">7 Days</a>
+                    <a href="?filter=1month" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1month' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Month</a>
+                    <a href="?filter=1year" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1year' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Year</a>
+                </div>
             </div>
-            <div class="h-64 flex items-end justify-between gap-4 px-4">
-                <?php
-                $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                $heights = [85, 92, 78, 88, 95, 20, 15];
-                foreach ($days as $i => $day):
-                    $isToday = ($i === 4);
-                    ?>
-                    <div class="flex-1 flex flex-col items-center gap-3">
-                        <div class="w-full <?= $isToday ? 'bg-primary' : 'bg-primary-container' ?> rounded-t-lg transition-all duration-500 hover:brightness-90"
-                            style="height: <?= $heights[$i] ?>%;"></div>
-                        <span
-                            class="text-label-sm <?= $isToday ? 'text-on-surface font-bold' : 'text-secondary' ?>"><?= $day ?></span>
-                    </div>
-                <?php endforeach; ?>
+            <div class="h-64 relative">
+                <canvas id="attendanceChart"></canvas>
             </div>
         </div>
         <div class="space-y-8">
             <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
                 <h4 class="font-headline-md text-headline-md mb-6">Distribution</h4>
                 <div class="relative w-48 h-48 mx-auto flex items-center justify-center">
-                    <div class="w-full h-full rounded-full border-[16px] border-primary"
-                        style="clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0);"></div>
-                    <div class="absolute w-full h-full rounded-full border-[16px] border-secondary-container"
-                        style="transform: rotate(270deg); clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);">
-                    </div>
-                    <div class="absolute flex flex-col items-center">
-                        <span
-                            class="font-headline-md text-headline-md"><?= number_format($totalEmployees / 1000, 1) ?>k</span>
-                        <span class="text-label-sm text-secondary">Active</span>
-                    </div>
+                    <canvas id="departmentPieChart"></canvas>
+                </div>
+                <div class="mt-4 flex flex-wrap justify-center gap-3">
+                    <?php foreach ($departmentData as $index => $dept): ?>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: <?= $deptColors[$index % count($deptColors)] ?>;"></span>
+                            <span class="text-label-sm text-secondary"><?= h($dept['name']) ?> (<?= $dept['employee_count'] ?>)</span>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
             <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
-                    <a class="text-primary text-label-sm font-bold hover:underline" href="#">View All</a>
+                    <a class="text-primary text-label-sm font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
                 </div>
+                <?php if ($latestAudit): ?>
                 <div class="activity-item flex gap-4 p-3 hover:bg-surface-muted rounded-xl transition-colors">
                     <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary">login</span>
+                        <span class="material-symbols-outlined text-primary">history</span>
                     </div>
                     <div class="flex-1">
-                        <p class="text-body-sm text-on-surface"><strong>System</strong> attendance recorded</p>
-                        <p class="text-label-sm text-secondary mt-1">Just now</p>
+                        <p class="text-body-sm text-on-surface"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
+                        <p class="text-label-sm text-secondary mt-1"><?= h($latestAudit['details'] ?? '') ?></p>
+                        <p class="text-label-xs text-secondary/70 mt-1"><?= date('M d, Y h:i A', strtotime($latestAudit['created_at'])) ?></p>
                     </div>
                 </div>
+                <?php else: ?>
+                <div class="text-center text-secondary py-4">No recent activity</div>
+                <?php endif; ?>
             </div>
             <div class="bg-gradient-to-br from-primary to-on-primary-container p-6 rounded-2xl shadow-md text-white">
                 <div class="flex items-center gap-3 mb-4 items-center">
@@ -184,10 +275,78 @@ $payrollMonth = $pdo->query("SELECT COALESCE(SUM(net_pay), 0) FROM payroll WHERE
             </div>
         </div>
     </div>
+
+    <!-- View Unpaid Attendance -->
+    <div class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-border-subtle">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-orange-500">pending_actions</span>
+                </div>
+                <div>
+                    <h4 class="font-headline-md text-headline-md">Unpaid Attendance</h4>
+                    <p class="text-label-sm text-secondary"><?= number_format($unpaidCount) ?> records pending payment</p>
+                </div>
+            </div>
+            <a href="<?= BASE_URL ?>/admin/attendance" class="btn bg-orange-100 text-orange-700 hover:bg-orange-200 px-4 py-2 rounded-lg font-bold text-label-sm">
+                View All
+            </a>
+        </div>
+        <?php if (!empty($unpaidAttendance)): ?>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-border-subtle">
+                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Employee</th>
+                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Employee ID</th>
+                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Date</th>
+                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Status</th>
+                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Hours Worked</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($unpaidAttendance as $record): ?>
+                    <tr class="hover:bg-surface-muted transition-colors border-b border-border-subtle/50">
+                        <td class="px-4 py-3 text-body-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span class="text-label-sm font-bold text-primary"><?= strtoupper(substr($record['first_name'], 0, 1)) ?></span>
+                                </div>
+                                <span class="font-medium"><?= h($record['first_name'] . ' ' . $record['last_name']) ?></span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-body-sm text-secondary"><?= h($record['employee_id']) ?></td>
+                        <td class="px-4 py-3 text-body-sm"><?= date('M d, Y', strtotime($record['date'])) ?></td>
+                        <td class="px-4 py-3">
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold <?php
+                                echo match($record['status']) {
+                                    'present' => 'bg-green-100 text-green-700',
+                                    'absent' => 'bg-red-100 text-red-700',
+                                    'late' => 'bg-yellow-100 text-yellow-700',
+                                    'half_day' => 'bg-orange-100 text-orange-700',
+                                    default => 'bg-gray-100 text-gray-700'
+                                };
+                            ?>"><?= ucfirst(h($record['status'])) ?></span>
+                        </td>
+                        <td class="px-4 py-3 text-body-sm"><?= $record['hours_worked'] ? number_format($record['hours_worked'], 1) . ' hrs' : '--' ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php else: ?>
+        <div class="text-center py-8 text-secondary">
+            <span class="material-symbols-outlined text-4xl text-green-400 mb-2">check_circle</span>
+            <p class="text-body-md">All attendance records have been paid!</p>
+        </div>
+        <?php endif; ?>
+    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    // Stats card hover effect
     const statsCards = document.querySelectorAll(".stats-card");
     statsCards.forEach(card => {
         card.addEventListener("mousemove", (e) => {
@@ -196,6 +355,108 @@ document.addEventListener("DOMContentLoaded", () => {
             card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
         });
     });
+
+    // Attendance Bar Chart
+    const attendanceCtx = document.getElementById('attendanceChart');
+    if (attendanceCtx) {
+        const attendanceData = <?= json_encode(array_values($attendanceData)) ?>;
+        const labels = attendanceData.map(d => d.label);
+        const presentData = attendanceData.map(d => parseInt(d.present_count) || 0);
+        const absentData = attendanceData.map(d => parseInt(d.absent_count) || 0);
+        
+        new Chart(attendanceCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Present',
+                        data: presentData,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6,
+                        barThickness: 24,
+                    },
+                    {
+                        label: 'Absent',
+                        data: absentData,
+                        backgroundColor: '#fca5a5',
+                        borderRadius: 6,
+                        barThickness: 24,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 8,
+                            padding: 20,
+                            font: { size: 12, weight: '500' }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { 
+                            font: { size: 11 },
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Department Pie Chart
+    const departmentCtx = document.getElementById('departmentPieChart');
+    if (departmentCtx) {
+        const departmentData = <?= json_encode(array_values($departmentData)) ?>;
+        const deptLabels = departmentData.map(d => d.name);
+        const deptCounts = departmentData.map(d => parseInt(d.employee_count));
+        const deptColors = <?= json_encode(array_values(array_map(function($_, $v) { return $v; }, array_keys($deptColors), $deptColors))) ?>;
+        
+        new Chart(departmentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: deptLabels,
+                datasets: [{
+                    data: deptCounts,
+                    backgroundColor: deptColors,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.raw / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.raw} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 });
 </script>
 <style>

@@ -4,17 +4,31 @@ requireAdmin();
 $pageTitle = 'Employee Directory | HRMS Core';
 $currentPage = 'employees';
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/pagination.php';
 
-$stmt = $pdo->query("
+$perPage = 10;
+$currentPageNum = max(1, (int)($_GET['page'] ?? 1));
+$offset = ($currentPageNum - 1) * $perPage;
+
+$totalCount = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'active'")->fetchColumn();
+
+$stmt = $pdo->prepare("
     SELECT e.*, d.name as department_name, p.title as position_title
     FROM employees e
     LEFT JOIN departments d ON e.department_id = d.id
     LEFT JOIN positions p ON e.position_id = p.id
     WHERE e.status = 'active'
     ORDER BY e.last_name ASC
+    LIMIT :limit OFFSET :offset
 ");
+$stmt->bindValue('limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $employees = $stmt->fetchAll();
-$totalCount = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'active'")->fetchColumn();
+
+$pagination = paginate($currentPageNum, $totalCount, $perPage, $_SERVER['REQUEST_URI'], 'page');
+// Remove page param from base URL to avoid duplicates
+$pagination['base_url'] = preg_replace('/[?&]page=\d+/', '', $pagination['base_url']);
 ?>
 <div class="employees-page max-w-7xl mx-auto">
     <div class="flex justify-between items-end mb-8">
@@ -119,11 +133,7 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'active
                 </tbody>
             </table>
         </div>
-        <div class="px-6 py-4 bg-surface-muted flex items-center justify-between">
-            <p class="text-label-sm text-secondary">Showing <span
-                    class="font-bold text-on-surface"><?= count($employees) ?></span> of <span
-                    class="font-bold text-on-surface"><?= number_format($totalCount) ?></span> employees</p>
-        </div>
+        <?= renderPaginationWithInfo($pagination) ?>
     </div>
 </div>
 <style>

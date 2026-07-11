@@ -4,8 +4,18 @@ requireAdmin();
 $pageTitle = 'Payroll Management | HRMS Core';
 $currentPage = 'payroll';
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/pagination.php';
 
 $msg = $error = '';
+
+$perPage = 15;
+$currentPageNum = max(1, (int)($_GET['page'] ?? 1));
+$offset = ($currentPageNum - 1) * $perPage;
+
+$totalCount = $pdo->query("SELECT COUNT(*) FROM payroll")->fetchColumn();
+
+$pagination = paginate($currentPageNum, $totalCount, $perPage, $_SERVER['REQUEST_URI'], 'page');
+$pagination['base_url'] = preg_replace('/[?&]page=\d+/', '', $pagination['base_url']);
 
 // Handle POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -165,7 +175,9 @@ foreach ($unpaidRows as $r) {
 // Payroll records
 $pStart = $_GET['p_start'] ?? date('Y-01-01');
 $pEnd = $_GET['p_end'] ?? date('Y-12-31');
-$payrolls = $pdo->prepare("SELECT p.*, e.first_name, e.last_name, e.employee_id FROM payroll p JOIN employees e ON p.employee_id = e.id ORDER BY p.created_at DESC LIMIT 100");
+$payrolls = $pdo->prepare("SELECT p.*, e.first_name, e.last_name, e.employee_id FROM payroll p JOIN employees e ON p.employee_id = e.id ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset");
+$payrolls->bindValue('limit', $perPage, PDO::PARAM_INT);
+$payrolls->bindValue('offset', $offset, PDO::PARAM_INT);
 $payrolls->execute();
 $prows = $payrolls->fetchAll();
 ?>
@@ -206,7 +218,6 @@ $prows = $payrolls->fetchAll();
                             <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">Out</th>
                             <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">Late</th>
                             <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">Rate</th>
-                            <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-widest font-bold">Pay</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -238,7 +249,6 @@ $prows = $payrolls->fetchAll();
                             <td class="px-4 py-2 font-mono text-body-sm"><?= h($r['clock_out'] ?? '--') ?></td>
                             <td class="px-4 py-2 font-mono text-body-sm"><?= $minutesLate ? $minutesLate . 'm' : '—' ?></td>
                             <td class="px-4 py-2 font-mono text-body-sm">₱<?= number_format($rate, 2) ?></td>
-                            <td class="px-4 py-2 font-mono text-body-sm font-semibold">₱<?= number_format($dayPay, 2) ?></td>
                         </tr>
                         <?php endforeach; ?>
                         <tr class="border-b border-border-subtle bg-surface-muted/50">
@@ -320,6 +330,7 @@ $prows = $payrolls->fetchAll();
                 </tbody>
             </table>
         </div>
+        <?= renderPaginationWithInfo($pagination) ?>
     </div>
 </div>
 
