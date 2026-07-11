@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= h($pageTitle ?? 'HRMS Core') ?></title>
+<link rel="icon" type="image/png" href="<?= BASE_URL ?>/public/logo.png">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $role = $_SESSION['role'] ?? '';
 require_once __DIR__ . '/topbar.php';
-if ($role === 'admin') {
+if (in_array($role, ['admin', 'hr'])) {
     require_once __DIR__ . '/sidebar_admin.php';
 } elseif ($role === 'employee') {
     require_once __DIR__ . '/sidebar_employee.php';

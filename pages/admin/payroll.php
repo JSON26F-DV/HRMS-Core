@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Payroll Management | HRMS Core';
 $currentPage = 'payroll';
 require_once __DIR__ . '/../../includes/header.php';

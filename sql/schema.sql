@@ -19,7 +19,7 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'employee') NOT NULL DEFAULT 'employee',
+    role ENUM('admin', 'hr', 'employee') NOT NULL DEFAULT 'employee',
     is_active TINYINT(1) DEFAULT 1,
     code VARCHAR(255) DEFAULT NULL,
     last_login TIMESTAMP NULL,
@@ -33,6 +33,7 @@ CREATE TABLE users (
 
 INSERT INTO users (email, password_hash, role) VALUES
 ('admin@hrmscore.io', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
+('hr@hrmscore.io', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'hr'),
 ('employee@hrmscore.io', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'employee');
 -- password: password
 
@@ -81,7 +82,8 @@ CREATE TABLE employees (
 
 INSERT INTO employees (employee_id, first_name, last_name, phone, position, department_id, hire_date, salary, status) VALUES
 ('EMP-2024-089', 'Jason', 'Verzosa', '+63 917 555 0123', 'Frontend Developer', 1, '2024-01-15', 75000.00, 'active'),
-('EMP-2024-001', 'Alex', 'Rivera', '+63 917 555 0001', 'Backend Developer', 2, '2023-06-01', 95000.00, 'active');
+('EMP-2024-001', 'Alex', 'Rivera', '+63 917 555 0001', 'Backend Developer', 2, '2023-06-01', 95000.00, 'active'),
+('EMP-2024-099', 'HR', 'Manager', '+63 917 555 0099', 'HR Coordinator', 2, '2024-01-15', 65000.00, 'active');
 
 CREATE TABLE attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -177,3 +179,19 @@ INSERT INTO system_settings (setting_key, setting_value) VALUES
 ('company_email', 'admin@hrmscore.io'),
 ('timezone', 'Asia/Manila'),
 ('payroll_cycle', 'monthly');
+
+CREATE TABLE events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    event_date DATE NOT NULL,
+    description TEXT,
+    type ENUM('holiday', 'event', 'meeting') DEFAULT 'event',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (event_date)
+);
+
+INSERT INTO events (title, event_date, description, type) VALUES
+('New Year''s Day', CURDATE() + INTERVAL 1 DAY, 'Public Holiday', 'holiday'),
+('Labor Day', DATE_FORMAT(CURDATE(), '%Y-05-01'), 'Public Holiday', 'holiday'),
+('Independence Day', DATE_FORMAT(CURDATE(), '%Y-06-12'), 'Public Holiday', 'holiday'),
+('Christmas Day', DATE_FORMAT(CURDATE(), '%Y-12-25'), 'Public Holiday', 'holiday');

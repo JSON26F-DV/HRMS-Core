@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Leave Management | HRMS Core';
 $currentPage = 'leave_management';
 require_once __DIR__ . '/../../includes/header.php';

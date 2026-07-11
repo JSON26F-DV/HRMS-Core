@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Attendance Management | HRMS Core';
 $currentPage = 'attendance';
 require_once __DIR__ . '/../../includes/header.php';

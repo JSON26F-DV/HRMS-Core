@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Edit Employee | HRMS Core';
 $currentPage = 'edit_employee';
 
@@ -37,19 +37,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("UPDATE employees SET first_name=?, last_name=?, phone=?, position=?, department_id=?, hire_date=?, salary=?, daily_rate=?, address=?, status=?, avatar_url=? WHERE id=?");
-        $stmt->execute([
-            $_POST['first_name'], $_POST['last_name'], $_POST['phone'],
-            $_POST['position'] ?? null, $_POST['department_id'] ?: null,
-            $_POST['hire_date'] ?: null, $_POST['salary'] ?: null,
-            $_POST['daily_rate'] ?: null,
-            $_POST['address'] ?? '', $_POST['status'] ?? 'active',
-            $_POST['avatar_url'] ?? null, $id
-        ]);
+            $stmt = $pdo->prepare("UPDATE employees SET first_name=?, last_name=?, phone=?, position=?, department_id=?, hire_date=?, salary=?, daily_rate=?, address=?, status=?, avatar_url=? WHERE id=?");
+            $stmt->execute([
+                $_POST['first_name'], $_POST['last_name'], $_POST['phone'],
+                $_POST['position'] ?? null, $_POST['department_id'] ?: null,
+                $_POST['hire_date'] ?: null, $_POST['salary'] ?: null,
+                $_POST['daily_rate'] ?: null,
+                $_POST['address'] ?? '', $_POST['status'] ?? 'active',
+                $_POST['avatar_url'] ?? null, $id
+            ]);
 
-        if ($emp['user_id']) {
-            $userStmt = "UPDATE users SET role=?, is_active=?";
-            $params = [$_POST['role'] ?? 'employee', isset($_POST['is_active']) ? 1 : 0];
+            if ($emp['user_id']) {
+                $newRole = $_POST['role'] ?? 'employee';
+                if (isHr() && $newRole !== 'employee') {
+                    $newRole = $emp['user_role'] ?? 'employee';
+                }
+                $userStmt = "UPDATE users SET role=?, is_active=?";
+                $params = [$newRole, isset($_POST['is_active']) ? 1 : 0];
             if (!empty($_POST['password'])) {
                 $userStmt .= ", password_hash=?";
                 $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -62,8 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $params[] = $emp['user_id'];
             $pdo->prepare($userStmt)->execute($params);
         } elseif (!empty($_POST['email']) && !empty($_POST['password'])) {
+            $newRole = $_POST['role'] ?? 'employee';
+            if (isHr() && $newRole !== 'employee') $newRole = 'employee';
             $stmtU = $pdo->prepare("INSERT INTO users (email, password_hash, role, is_active) VALUES (?, ?, ?, ?)");
-            $stmtU->execute([$_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT), $_POST['role'] ?? 'employee', isset($_POST['is_active']) ? 1 : 0]);
+            $stmtU->execute([$_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT), $newRole, isset($_POST['is_active']) ? 1 : 0]);
             $pdo->prepare("UPDATE employees SET user_id = ? WHERE id = ?")->execute([$pdo->lastInsertId(), $id]);
         }
         $pdo->commit();
@@ -192,7 +198,10 @@ $hasUser = !is_null($emp['user_id']);
                 <label class="font-label-md text-label-md text-on-surface-variant">Role</label>
                 <select name="role" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
                     <option value="employee" <?= ($emp['user_role'] ?? 'employee') === 'employee' ? 'selected' : '' ?>>Employee</option>
+                    <?php if (isAdmin()): ?>
                     <option value="admin" <?= ($emp['user_role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
+                    <option value="hr" <?= ($emp['user_role'] ?? '') === 'hr' ? 'selected' : '' ?>>HR</option>
+                    <?php endif; ?>
                 </select>
             </div>
             <div class="space-y-1.5 flex items-end pb-3">
@@ -205,7 +214,7 @@ $hasUser = !is_null($emp['user_id']);
 
         <div class="flex gap-4 pt-4">
             <button type="button" onclick="confirmSave()" class="px-8 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Update Employee</button>
-            <?php if (!$deleted && $hasUser): ?>
+            <?php if (isAdmin() && !$deleted && $hasUser): ?>
                 <button type="button" onclick="confirmDelete()" class="px-8 py-3 bg-error-container text-on-error-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Delete Employee</button>
             <?php endif; ?>
             <a href="<?= BASE_URL ?>/admin/employees" class="px-8 py-3 border border-border-subtle rounded-lg font-bold text-secondary hover:bg-surface-muted transition-all">Cancel</a>

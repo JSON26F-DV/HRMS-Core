@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Add New Employee | HRMS Core';
 $currentPage = 'add_employee';
 
@@ -26,11 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $empId = $pdo->lastInsertId();
 
         $userCode = $_POST['code'] ? password_hash($_POST['code'], PASSWORD_DEFAULT) : null;
+        $role = $_POST['role'] ?? 'employee';
+        if (isHr() && $role !== 'employee') {
+            $role = 'employee';
+        }
         $stmt = $pdo->prepare("INSERT INTO users (email, password_hash, role, is_active, code) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([
             $_POST['email'],
             password_hash($_POST['password'], PASSWORD_DEFAULT),
-            $_POST['role'] ?? 'employee',
+            $role,
             isset($_POST['is_active']) ? 1 : 1,
             $userCode,
         ]);
@@ -151,7 +155,10 @@ $departments = $pdo->query("SELECT * FROM departments ORDER BY name")->fetchAll(
                 <label class="font-label-md text-label-md text-on-surface-variant">Role</label>
                 <select name="role" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
                     <option value="employee">Employee</option>
+                    <?php if (isAdmin()): ?>
                     <option value="admin">Admin</option>
+                    <option value="hr">HR</option>
+                    <?php endif; ?>
                 </select>
             </div>
             <div class="space-y-1.5">

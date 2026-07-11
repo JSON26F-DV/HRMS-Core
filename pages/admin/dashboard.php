@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Dashboard | HRMS Core';
 $currentPage = 'dashboard';
 require_once __DIR__ . '/../../includes/header.php';

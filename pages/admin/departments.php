@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Departments | HRMS Core';
 $currentPage = 'departments';
 require_once __DIR__ . '/../../includes/header.php';

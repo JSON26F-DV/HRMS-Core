@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
 
-        $path = $user['role'] === 'admin' ? '/admin/dashboard' : '/employee/dashboard';
+        $path = in_array($user['role'], ['admin', 'hr']) ? '/admin/dashboard' : '/employee/dashboard';
         header('Location: ' . BASE_URL . $path);
         exit;
     }
@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="<?= BASE_URL ?>/public/logo.png">
     <title>Login | HRMS Core</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -102,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .cssbuttons-io-button {
-            background: #006d43;
+            background: #75eea5;
             color: white;
             font-family: inherit;
             padding: 0.35em;
@@ -168,11 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div
         class="login-card w-full max-w-[440px] bg-surface-container-lowest rounded-2xl p-stack-lg md:p-10 relative z-10">
         <div class="flex flex-col items-center mb-stack-lg">
-            <div
-                class="w-16 h-16 bg-primary-container rounded-xl flex items-center justify-center mb-stack-md shadow-sm">
-                <span class="material-symbols-outlined text-primary text-3xl"
-                    style="font-variation-settings: 'FILL' 1;">domain</span>
-            </div>
+            <img src="<?= BASE_URL ?>/public/logo.png" class="h-16 w-auto mb-stack-md" alt="HRMS Core">
             <h1 class="font-headline-md text-headline-md text-on-surface mb-1">HRMS Core</h1>
             <p class="font-body-sm text-body-sm text-secondary">Management Portal Login</p>
         </div>

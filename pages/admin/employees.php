@@ -1,6 +1,6 @@
 <?php
 requireLogin();
-requireAdmin();
+requireHrOrAdmin();
 $pageTitle = 'Employee Directory | HRMS Core';
 $currentPage = 'employees';
 require_once __DIR__ . '/../../includes/header.php';
@@ -146,7 +146,7 @@ $pagination['base_url'] = preg_replace('/[?&]page=\d+/', '', $pagination['base_u
                                             title="Edit Record">
                                             <span class="material-symbols-outlined text-[18px]">edit</span>
                                         </a>
-                                        <?php if (!$delAt && $emp['user_id']): ?>
+                                        <?php if (isAdmin() && !$delAt && $emp['user_id']): ?>
                                             <button type="button" onclick="deleteEmployee(<?= $emp['id'] ?>, '<?= h($emp['first_name'] . ' ' . $emp['last_name']) ?>')"
                                                 class="w-9 h-9 rounded-lg border border-border-subtle flex items-center justify-center text-secondary hover:bg-error-container hover:text-error transition-all"
                                                 title="Delete">

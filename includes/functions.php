@@ -7,6 +7,14 @@ function isAdmin(): bool {
     return ($_SESSION['role'] ?? '') === 'admin';
 }
 
+function isHr(): bool {
+    return ($_SESSION['role'] ?? '') === 'hr';
+}
+
+function isHrOrAdmin(): bool {
+    return isAdmin() || isHr();
+}
+
 function isEmployee(): bool {
     return ($_SESSION['role'] ?? '') === 'employee';
 }
@@ -26,10 +34,18 @@ function requireAdmin(): void {
     }
 }
 
+function requireHrOrAdmin(): void {
+    requireLogin();
+    if (!isHrOrAdmin()) {
+        header('Location: ' . BASE_URL . '/dashboard');
+        exit;
+    }
+}
+
 function redirectIfLoggedIn(): void {
     if (isLoggedIn()) {
         $role = $_SESSION['role'] ?? 'employee';
-        $path = $role === 'admin' ? '/admin/dashboard' : '/employee/dashboard';
+        $path = in_array($role, ['admin', 'hr']) ? '/admin/dashboard' : '/employee/dashboard';
         header('Location: ' . BASE_URL . $path);
         exit;
     }

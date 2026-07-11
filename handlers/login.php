@@ -21,7 +21,7 @@ if ($user && password_verify($password, $user['password_hash'])) {
         $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
         logAudit('login', 'user', $user['id'], 'User logged in');
 
-        $path = $user['role'] === 'admin' ? '/admin/dashboard' : '/employee/dashboard';
+        $path = in_array($user['role'], ['admin', 'hr']) ? '/admin/dashboard' : '/employee/dashboard';
     header('Location: ' . BASE_URL . $path);
 } else {
     $_SESSION['_errors']['login'] = 'Invalid email or password.';

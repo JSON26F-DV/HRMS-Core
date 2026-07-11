@@ -22,6 +22,7 @@ $routes = [
     '/admin/employee-profile'       => 'pages/admin/employee_profile.php',
     '/admin/departments'            => 'pages/admin/departments.php',
     '/admin/departments/setup'      => 'pages/admin/setup.php',
+    '/admin/events'                 => 'pages/admin/events.php',
     '/admin/attendance'             => 'pages/admin/attendance.php',
     '/admin/leave-management'       => 'pages/admin/leave_management.php',
     '/admin/payroll'                => 'pages/admin/payroll.php',

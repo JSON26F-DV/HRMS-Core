@@ -37,18 +37,26 @@
                <span class="ms-3">Payroll</span>
             </a>
          </li>
-         <li>
-            <a href="<?= BASE_URL ?>/admin/performance-reports" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'performance_reports' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
-               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 16l4-8 4 4 8-8"/></svg>
-               <span class="ms-3">Performance</span>
-            </a>
-         </li>
           <li>
-            <a href="<?= BASE_URL ?>/admin/system-settings" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'system_settings' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
-               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 1.5"/></svg>
-               <span class="ms-3">Settings</span>
-            </a>
-         </li>
+             <a href="<?= BASE_URL ?>/admin/performance-reports" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'performance_reports' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+                <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 16l4-8 4 4 8-8"/></svg>
+                <span class="ms-3">Performance</span>
+             </a>
+          </li>
+          <li>
+             <a href="<?= BASE_URL ?>/admin/events" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'events' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+                <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16M4 10V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v4M4 10v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8M7 14h.01M11 14h.01M15 14h.01M7 17h.01M11 17h.01M15 17h.01"/></svg>
+                <span class="ms-3">Events</span>
+             </a>
+          </li>
+          <?php if (isAdmin()): ?>
+           <li>
+             <a href="<?= BASE_URL ?>/admin/system-settings" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'system_settings' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+                <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 1.5"/></svg>
+                <span class="ms-3">Settings</span>
+             </a>
+          </li>
+          <?php endif; ?>
       </ul>
    </div>
 </aside>
