@@ -205,7 +205,7 @@ $unpaidAttendance = $pdo->query("
         </div>
     </div>
 
-    <!-- Attendance Overview Row -->
+    <!-- Attendance Overview & Recent Activity Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
             <div class="flex items-center justify-between mb-4">
@@ -223,71 +223,57 @@ $unpaidAttendance = $pdo->query("
                 <canvas id="attendanceChart"></canvas>
             </div>
         </div>
-        <div class="space-y-6">
-            <div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-border-subtle">
-                <h4 class="font-headline-md text-headline-md mb-4">Distribution</h4>
-                <div class="w-36 h-36 mx-auto">
-                    <canvas id="departmentPieChart"></canvas>
+        <div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-border-subtle">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
+                <a class="text-primary text-xs font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
+            </div>
+            <?php if ($latestAudit): ?>
+            <div class="flex gap-3 p-2 hover:bg-surface-muted rounded-lg transition-colors">
+                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-primary text-sm">history</span>
                 </div>
-                <div class="mt-3 flex flex-wrap justify-center gap-2">
-                    <?php foreach ($departmentData as $index => $dept): ?>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: <?= $deptColors[$index % count($deptColors)] ?>;"></span>
-                            <span class="text-xs text-secondary"><?= h($dept['name']) ?> (<?= $dept['employee_count'] ?>)</span>
-                        </div>
-                    <?php endforeach; ?>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs text-on-surface truncate"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
+                    <p class="text-xs text-secondary truncate"><?= h($latestAudit['details'] ?? '') ?></p>
+                    <p class="text-xs text-secondary/60 mt-1"><?= date('M d, h:i A', strtotime($latestAudit['created_at'])) ?></p>
                 </div>
             </div>
-            <div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-border-subtle">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
-                    <a class="text-primary text-xs font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
-                </div>
-                <?php if ($latestAudit): ?>
-                <div class="flex gap-3 p-2 hover:bg-surface-muted rounded-lg transition-colors">
-                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary text-sm">history</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs text-on-surface truncate"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
-                        <p class="text-xs text-secondary truncate"><?= h($latestAudit['details'] ?? '') ?></p>
-                    </div>
-                </div>
-                <?php else: ?>
-                <div class="text-center text-secondary py-2 text-xs">No recent activity</div>
-                <?php endif; ?>
-            </div>
+            <?php else: ?>
+            <div class="text-center text-secondary py-4 text-xs">No recent activity</div>
+            <?php endif; ?>
         </div>
     </div>
 
-    <!-- View Unpaid Attendance -->
-    <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-orange-500">pending_actions</span>
+    <!-- Unpaid Attendance & Upcoming Event Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-orange-500">pending_actions</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline-md text-headline-md">Unpaid Attendance</h4>
+                        <p class="text-label-sm text-secondary"><?= number_format($unpaidCount) ?> records pending payment</p>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-headline-md text-headline-md">Unpaid Attendance</h4>
-                    <p class="text-label-sm text-secondary"><?= number_format($unpaidCount) ?> records pending payment</p>
-                </div>
+                <a href="<?= BASE_URL ?>/admin/attendance" class="btn bg-orange-100 text-orange-700 hover:bg-orange-200 px-4 py-2 rounded-lg font-bold text-label-sm">
+                    View All
+                </a>
             </div>
-            <a href="<?= BASE_URL ?>/admin/attendance" class="btn bg-orange-100 text-orange-700 hover:bg-orange-200 px-4 py-2 rounded-lg font-bold text-label-sm">
-                View All
-            </a>
-        </div>
-        <?php if (!empty($unpaidAttendance)): ?>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-border-subtle">
-                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Employee</th>
-                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Employee ID</th>
-                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Date</th>
-                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Status</th>
-                        <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Hours Worked</th>
-                    </tr>
-                </thead>
+            <?php if (!empty($unpaidAttendance)): ?>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-border-subtle">
+                            <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Employee</th>
+                            <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Employee ID</th>
+                            <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Date</th>
+                            <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Status</th>
+                            <th class="text-left px-4 py-3 text-label-sm text-secondary uppercase tracking-wider font-bold">Hours Worked</th>
+                        </tr>
+                    </thead>
                 <tbody>
                     <?php foreach ($unpaidAttendance as $record): ?>
                     <tr class="hover:bg-surface-muted transition-colors border-b border-border-subtle/50">
@@ -324,6 +310,25 @@ $unpaidAttendance = $pdo->query("
             <p class="text-body-md">All attendance records have been paid!</p>
         </div>
         <?php endif; ?>
+        </div>
+        
+        <!-- Upcoming Event -->
+        <div class="bg-gradient-to-br from-primary to-on-primary-container p-6 rounded-2xl shadow-md text-white">
+            <div class="flex items-center gap-3 mb-4">
+                <img src="<?= BASE_URL ?>/public/emojis/party-popper_1f389.png" class="w-10 h-10" alt="present">
+                <span class="text-label-sm uppercase tracking-widest font-bold opacity-80">Upcoming Holiday</span>
+            </div>
+            <div class="flex justify-between items-start">
+                <div>
+                    <h5 class="font-headline-md text-headline-md">Labor Day</h5>
+                    <p class="text-body-sm opacity-90 mt-1">Monday, May 1, 2024</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-display-lg font-display-lg block leading-none">12</span>
+                    <span class="text-label-sm uppercase tracking-widest font-bold opacity-80">Days Left</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
