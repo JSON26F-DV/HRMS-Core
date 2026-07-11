@@ -52,29 +52,24 @@ function getPageNumbers(array $pagination): array {
     $pages = [];
     
     if ($total <= 7) {
-        // Show all pages if 7 or fewer
         for ($i = 1; $i <= $total; $i++) {
             $pages[] = $i;
         }
     } else {
-        // Always show first page
         $pages[] = 1;
         
         if ($current <= 4) {
-            // Near the start
             for ($i = 2; $i <= 5; $i++) {
                 $pages[] = $i;
             }
             $pages[] = '...';
             $pages[] = $total;
         } elseif ($current >= $total - 3) {
-            // Near the end
             $pages[] = '...';
             for ($i = $total - 4; $i <= $total; $i++) {
                 $pages[] = $i;
             }
         } else {
-            // In the middle
             $pages[] = '...';
             for ($i = $current - 1; $i <= $current + 1; $i++) {
                 $pages[] = $i;
@@ -88,13 +83,9 @@ function getPageNumbers(array $pagination): array {
 }
 
 /**
- * Render full pagination with page numbers (for large tables)
+ * Render full pagination with page numbers (always shows, disabled if single page)
  */
 function renderPagination(array $pagination): string {
-    if ($pagination['total_pages'] <= 1) {
-        return '';
-    }
-    
     $pages = getPageNumbers($pagination);
     $html = '<nav aria-label="Page navigation example" class="mt-6">
         <ul class="flex -space-x-px text-sm">
@@ -132,17 +123,13 @@ function renderPagination(array $pagination): string {
 }
 
 /**
- * Render compact pagination with only Previous/Next buttons (for small tables)
+ * Render compact pagination with only Previous/Next buttons (always shows, disabled if single page)
  */
 function renderPaginationCompact(array $pagination): string {
-    if ($pagination['total_pages'] <= 1) {
-        return '';
-    }
-    
     $start = $pagination['offset'] + 1;
     $end = min($pagination['offset'] + $pagination['per_page'], $pagination['total_items']);
     
-    return '<div class="flex flex-col items-center">
+    return '<div class="flex flex-col items-center mt-6 pt-4 border-t border-border-subtle">
     <span class="text-sm text-body">
         Showing <span class="font-semibold text-heading">' . $start . '</span> to <span class="font-semibold text-heading">' . $end . '</span> of <span class="font-semibold text-heading">' . number_format($pagination['total_items']) . '</span> Entries
     </span>
@@ -162,18 +149,14 @@ function renderPaginationCompact(array $pagination): string {
 }
 
 /**
- * Render full pagination with entries info (large variant)
+ * Render full pagination with entries info (always shows, disabled if single page)
  */
 function renderPaginationWithInfo(array $pagination): string {
-    if ($pagination['total_pages'] <= 1) {
-        return '';
-    }
-    
     $start = $pagination['offset'] + 1;
     $end = min($pagination['offset'] + $pagination['per_page'], $pagination['total_items']);
     
     $pages = getPageNumbers($pagination);
-    $html = '<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+    $html = '<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 pt-4 border-t border-border-subtle">
         <span class="text-sm text-body">
             Showing <span class="font-semibold text-heading">' . $start . '</span> to <span class="font-semibold text-heading">' . $end . '</span> of <span class="font-semibold text-heading">' . number_format($pagination['total_items']) . '</span> Entries
         </span>

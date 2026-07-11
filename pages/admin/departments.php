@@ -4,10 +4,20 @@ requireAdmin();
 $pageTitle = 'Departments | HRMS Core';
 $currentPage = 'departments';
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/pagination.php';
 
 $msg = $error = '';
 $editDept = null;
 $manageDept = null;
+
+$perPage = 10;
+$currentPageNum = max(1, (int)($_GET['page'] ?? 1));
+$offset = ($currentPageNum - 1) * $perPage;
+
+$totalCount = $pdo->query("SELECT COUNT(*) FROM departments")->fetchColumn();
+
+$pagination = paginate($currentPageNum, $totalCount, $perPage, $_SERVER['REQUEST_URI'], 'page');
+$pagination['base_url'] = preg_replace('/[?&]page=\d+/', '', $pagination['base_url']);
 
 // Handle POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -79,7 +89,11 @@ if (isset($_GET['manage'])) {
     $manageDept = $stmt->fetch();
 }
 
-$departments = $pdo->query("SELECT d.*, COUNT(e.id) as employee_count FROM departments d LEFT JOIN employees e ON e.department_id = d.id GROUP BY d.id ORDER BY d.name")->fetchAll();
+$stmt = $pdo->prepare("SELECT d.*, COUNT(e.id) as employee_count FROM departments d LEFT JOIN employees e ON e.department_id = d.id GROUP BY d.id ORDER BY d.name LIMIT :limit OFFSET :offset");
+$stmt->bindValue('limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$departments = $stmt->fetchAll();
 ?>
 <div class="max-w-7xl mx-auto space-y-8">
     <div class="flex justify-between items-end">
@@ -247,6 +261,7 @@ $departments = $pdo->query("SELECT d.*, COUNT(e.id) as employee_count FROM depar
                     </tbody>
                 </table>
             </div>
+            <?= renderPaginationCompact($pagination) ?>
         </div>
     </div>
     <?php endif; ?>
