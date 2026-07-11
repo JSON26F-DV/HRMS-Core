@@ -205,12 +205,13 @@ $unpaidAttendance = $pdo->query("
         </div>
     </div>
 
+    <!-- Attendance Overview Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-border-subtle">
-            <div class="flex items-center justify-between mb-8">
+        <div class="lg:col-span-2 bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
+            <div class="flex items-center justify-between mb-4">
                 <div>
                     <h4 class="font-headline-md text-headline-md">Attendance Overview</h4>
-                    <p class="text-label-md text-secondary"><?= $filterLabel ?></p>
+                    <p class="text-label-sm text-secondary"><?= $filterLabel ?></p>
                 </div>
                 <div class="flex gap-2">
                     <a href="?filter=7days" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '7days' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">7 Days</a>
@@ -218,66 +219,49 @@ $unpaidAttendance = $pdo->query("
                     <a href="?filter=1year" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1year' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Year</a>
                 </div>
             </div>
-            <div class="h-64 relative">
+            <div class="h-48">
                 <canvas id="attendanceChart"></canvas>
             </div>
         </div>
-        <div class="space-y-8">
-            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
-                <h4 class="font-headline-md text-headline-md mb-6">Distribution</h4>
-                <div class="relative w-48 h-48 mx-auto flex items-center justify-center">
+        <div class="space-y-6">
+            <div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-border-subtle">
+                <h4 class="font-headline-md text-headline-md mb-4">Distribution</h4>
+                <div class="w-36 h-36 mx-auto">
                     <canvas id="departmentPieChart"></canvas>
                 </div>
-                <div class="mt-4 flex flex-wrap justify-center gap-3">
+                <div class="mt-3 flex flex-wrap justify-center gap-2">
                     <?php foreach ($departmentData as $index => $dept): ?>
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: <?= $deptColors[$index % count($deptColors)] ?>;"></span>
-                            <span class="text-label-sm text-secondary"><?= h($dept['name']) ?> (<?= $dept['employee_count'] ?>)</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: <?= $deptColors[$index % count($deptColors)] ?>;"></span>
+                            <span class="text-xs text-secondary"><?= h($dept['name']) ?> (<?= $dept['employee_count'] ?>)</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
-            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
-                <div class="flex items-center justify-between mb-4">
+            <div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-border-subtle">
+                <div class="flex items-center justify-between mb-3">
                     <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
-                    <a class="text-primary text-label-sm font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
+                    <a class="text-primary text-xs font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
                 </div>
                 <?php if ($latestAudit): ?>
-                <div class="activity-item flex gap-4 p-3 hover:bg-surface-muted rounded-xl transition-colors">
-                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary">history</span>
+                <div class="flex gap-3 p-2 hover:bg-surface-muted rounded-lg transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary text-sm">history</span>
                     </div>
-                    <div class="flex-1">
-                        <p class="text-body-sm text-on-surface"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
-                        <p class="text-label-sm text-secondary mt-1"><?= h($latestAudit['details'] ?? '') ?></p>
-                        <p class="text-label-xs text-secondary/70 mt-1"><?= date('M d, Y h:i A', strtotime($latestAudit['created_at'])) ?></p>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-on-surface truncate"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
+                        <p class="text-xs text-secondary truncate"><?= h($latestAudit['details'] ?? '') ?></p>
                     </div>
                 </div>
                 <?php else: ?>
-                <div class="text-center text-secondary py-4">No recent activity</div>
+                <div class="text-center text-secondary py-2 text-xs">No recent activity</div>
                 <?php endif; ?>
-            </div>
-            <div class="bg-gradient-to-br from-primary to-on-primary-container p-6 rounded-2xl shadow-md text-white">
-                <div class="flex items-center gap-3 mb-4 items-center">
-                    <img src="<?= BASE_URL ?>/public/emojis/party-popper_1f389.png" class="w-10 h-10" alt="present">
-                    <span class="text-label-sm uppercase tracking-widest font-bold opacity-80">Upcoming Holiday</span>
-                </div>
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h5 class="font-headline-md text-headline-md">Labor Day</h5>
-                        <p class="text-body-sm opacity-90 mt-1">Monday, May 1, 2024</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-display-lg font-display-lg block leading-none">12</span>
-                        <span class="text-label-sm uppercase tracking-widest font-bold opacity-80">Days Left</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- View Unpaid Attendance -->
-    <div class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-border-subtle">
+    <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
