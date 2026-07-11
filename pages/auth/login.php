@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div
         class="login-card w-full max-w-[440px] bg-surface-container-lowest rounded-2xl p-stack-lg md:p-10 relative z-10">
         <div class="flex flex-col items-center mb-stack-lg">
-            <img src="<?= BASE_URL ?>/public/logo.png" class="h-16 w-auto mb-stack-md" alt="HRMS Core">
+            <img src="<?= BASE_URL ?>/public/logo.png" class="h-16 w-auto rounded-lg mb-stack-md" alt="HRMS Core">
             <h1 class="font-headline-md text-headline-md text-on-surface mb-1">HRMS Core</h1>
             <p class="font-body-sm text-body-sm text-secondary">Management Portal Login</p>
         </div>
