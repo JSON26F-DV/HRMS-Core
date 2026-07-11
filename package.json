@@ -1,0 +1,14 @@
+{
+  "name": "hrms-core",
+  "private": true,
+  "scripts": {
+    "dev": "npx @tailwindcss/cli -i ./public/css/app.css -o ./public/css/output.css --watch",
+    "build": "npx @tailwindcss/cli -i ./public/css/app.css -o ./public/css/output.css --minify",
+    "serve": "php -S localhost:8000"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}
