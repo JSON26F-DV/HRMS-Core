@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$name) {
             $error = 'Department name is required.';
         } else {
-            $pdo->prepare("INSERT INTO departments (name, description) VALUES (?, ?)")->execute([$name, $desc]);
+            $positions = json_encode(array_map('trim', preg_split('/\r\n|\n|\r|,/', $_POST['positions'] ?? '')), JSON_UNESCAPED_UNICODE);
+            $pdo->prepare("INSERT INTO departments (name, description, positions) VALUES (?, ?, ?)")->execute([$name, $desc, $positions]);
             logAudit('create', 'department', $pdo->lastInsertId(), 'Created department: '.$name);
             $msg = 'Department created.';
         }
@@ -41,7 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$name) {
             $error = 'Department name is required.';
         } else {
-            $pdo->prepare("UPDATE departments SET name = ?, description = ? WHERE id = ?")->execute([$name, $desc, $id]);
+            $positions = json_encode(array_map('trim', preg_split('/\r\n|\n|\r|,/', $_POST['positions'] ?? '')), JSON_UNESCAPED_UNICODE);
+            $pdo->prepare("UPDATE departments SET name = ?, description = ?, positions = ? WHERE id = ?")->execute([$name, $desc, $positions, $id]);
             logAudit('update', 'department', $id, 'Updated department: '.$name);
             $msg = 'Department updated.';
         }
@@ -54,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($empCount->fetchColumn() > 0) {
             $error = 'Cannot delete department with assigned employees.';
         } else {
-            $pdo->prepare("DELETE FROM positions WHERE department_id = ?")->execute([$id]);
             $pdo->prepare("DELETE FROM departments WHERE id = ?")->execute([$id]);
             logAudit('delete', 'department', $id, 'Deleted department');
             $msg = 'Department deleted.';
@@ -185,8 +186,16 @@ $departments = $stmt->fetchAll();
                     </div>
                     <div class="space-y-1.5">
                         <label class="font-label-md text-label-md text-on-surface-variant">Description</label>
-                        <textarea name="description" rows="3"
+                        <textarea name="description" rows="2"
                             class="w-full px-4 py-3 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container"><?= h($editDept['description'] ?? '') ?></textarea>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="font-label-md text-label-md text-on-surface-variant">Positions (one per line)</label>
+                        <textarea name="positions" rows="4"
+                            class="w-full px-4 py-3 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container"><?php
+                            $posList = $editDept ? json_decode($editDept['positions'] ?? '[]', true) : [];
+                            if (!empty($posList)) echo h(implode("\n", $posList));
+                        ?></textarea>
                     </div>
                     <div class="flex gap-3">
                         <button type="submit" name="<?= $editDept ? 'update' : 'add' ?>"

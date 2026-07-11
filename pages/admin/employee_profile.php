@@ -7,15 +7,18 @@ require_once __DIR__ . '/../../includes/header.php';
 
 $id = $_GET['id'] ?? 0;
 $stmt = $pdo->prepare("
-    SELECT e.*, d.name as department_name, p.title as position_title
+    SELECT e.*, d.name as department_name, e.position as position_title, u.email as email
     FROM employees e
     LEFT JOIN departments d ON e.department_id = d.id
-    LEFT JOIN positions p ON e.position_id = p.id
+    LEFT JOIN users u ON e.user_id = u.id
     WHERE e.id = ?
 ");
 $stmt->execute([$id]);
 $emp = $stmt->fetch();
-if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
+if (!$emp) {
+    header('Location: ' . BASE_URL . '/admin/employees');
+    exit;
+}
 ?>
 <div class="max-w-5xl mx-auto space-y-8">
     <div class="flex items-center gap-4">
@@ -27,23 +30,31 @@ if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
 
     <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-8">
         <div class="flex items-center gap-6">
-            <div class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-2xl font-bold">
+            <div
+                class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-2xl font-bold">
                 <?= strtoupper(substr($emp['first_name'], 0, 1) . substr($emp['last_name'], 0, 1)) ?>
             </div>
             <div>
-                <h3 class="font-headline-md text-headline-md text-on-surface"><?= h($emp['first_name'] . ' ' . $emp['last_name']) ?></h3>
-                <p class="text-body-md text-secondary"><?= h($emp['position_title'] ?? 'N/A') ?> · <?= h($emp['department_name'] ?? 'N/A') ?></p>
+                <h3 class="font-headline-md text-headline-md text-on-surface">
+                    <?= h($emp['first_name'] . ' ' . $emp['last_name']) ?>
+                </h3>
+                <p class="text-body-md text-secondary"><?= h($emp['position_title'] ?? 'N/A') ?> ·
+                    <?= h($emp['department_name'] ?? 'N/A') ?>
+                </p>
                 <p class="text-label-sm text-secondary mt-1">Employee ID: <?= h($emp['employee_id']) ?></p>
             </div>
             <div class="ml-auto">
-                <a href="<?= BASE_URL ?>/admin/edit-employee?id=<?= $emp['id'] ?>" class="px-6 py-2.5 bg-primary-container text-on-primary-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Edit Record</a>
+                <a href="<?= BASE_URL ?>/admin/edit-employee?id=<?= $emp['id'] ?>"
+                    class="px-6 py-2.5 bg-primary-container text-on-primary-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Edit
+                    Record</a>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 ">
         <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-6">
-            <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold text-secondary mb-4">Contact Information</h4>
+            <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold text-secondary mb-4">Contact
+                Information</h4>
             <div class="space-y-3">
                 <div class="flex items-center gap-3 text-body-sm">
                     <span class="material-symbols-outlined text-secondary">mail</span>
@@ -60,7 +71,8 @@ if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
             </div>
         </div>
         <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-6">
-            <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold text-secondary mb-4">Employment Details</h4>
+            <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold text-secondary mb-4">Employment
+                Details</h4>
             <div class="space-y-3">
                 <div class="flex justify-between text-body-sm">
                     <span class="text-secondary">Department</span>
@@ -76,8 +88,9 @@ if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
                 </div>
             </div>
         </div>
-        <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-6">
-            <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold text-secondary mb-4">Compensation</h4>
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-6 ">
+            <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold text-secondary mb-4">Compensation
+            </h4>
             <div class="space-y-3">
                 <div class="flex justify-between text-body-sm">
                     <span class="text-secondary">Salary</span>
@@ -85,11 +98,17 @@ if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
                 </div>
                 <div class="flex justify-between text-body-sm">
                     <span class="text-secondary">Status</span>
-                    <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase"><?= ucfirst($emp['status']) ?></span>
+                    <span
+                        class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase"><?= ucfirst($emp['status']) ?></span>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>
+<style>
+    main {
+        background: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;
+        min-height: 100vh
+    }
+</style>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

@@ -29,7 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$title || !$deptId) {
             $error = 'Position title and department are required.';
         } else {
-            $pdo->prepare("INSERT INTO positions (title, department_id) VALUES (?, ?)")->execute([$title, $deptId]);
+            $dept = $pdo->prepare("SELECT positions FROM departments WHERE id = ?");
+            $dept->execute([$deptId]);
+            $existing = json_decode($dept->fetchColumn() ?: '[]', true);
+            $existing[] = $title;
+            $pdo->prepare("UPDATE departments SET positions = ? WHERE id = ?")->execute([json_encode(array_unique($existing), JSON_UNESCAPED_UNICODE), $deptId]);
             $msg = 'Position created.';
             if (isset($_POST['next'])) $step = 3;
         }
@@ -41,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $deptId = $_POST['department_id'] ?? '';
-        $positionId = $_POST['position_id'] ?? '';
+        $position = $_POST['position'] ?? '';
 
         if (!$firstName || !$lastName || !$email || !$password) {
             $error = 'All fields are required.';
@@ -50,13 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $pdo->beginTransaction();
-                $empId = 'EMP-' . date('Y') . '-' . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
-                $stmt = $pdo->prepare("INSERT INTO employees (employee_id, first_name, last_name, email, department_id, position_id, status) VALUES (?, ?, ?, ?, ?, ?, 'active')");
-                $stmt->execute([$empId, $firstName, $lastName, $email, $deptId ?: null, $positionId ?: null]);
+                $empCode = 'EMP-' . date('Y') . '-' . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+                $stmt = $pdo->prepare("INSERT INTO employees (employee_id, first_name, last_name, department_id, position, status) VALUES (?, ?, ?, ?, ?, 'active')");
+                $stmt->execute([$empCode, $firstName, $lastName, $deptId ?: null, $position ?: null]);
                 $empIdInserted = $pdo->lastInsertId();
 
-                $stmt = $pdo->prepare("INSERT INTO users (employee_id, email, password_hash, role) VALUES (?, ?, ?, 'employee')");
-                $stmt->execute([$empIdInserted, $email, password_hash($password, PASSWORD_DEFAULT)]);
+                $userCode = substr(bin2hex(random_bytes(4)), 0, 8);
+                $stmt = $pdo->prepare("INSERT INTO users (email, password_hash, role, code) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$email, password_hash($password, PASSWORD_DEFAULT), 'employee', password_hash($userCode, PASSWORD_DEFAULT)]);
+                $userId = $pdo->lastInsertId();
+                $pdo->prepare("UPDATE employees SET user_id = ? WHERE id = ?")->execute([$userId, $empIdInserted]);
                 $pdo->commit();
                 $msg = 'HR Staff account created.';
                 if (isset($_POST['next'])) $step = 4;
@@ -167,14 +174,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="space-y-1.5">
                 <label class="font-label-md text-label-md text-on-surface-variant">Position</label>
-                <select name="position_id" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container">
-                    <option value="">Select</option>
-                    <?php
-                    $positions = $pdo->query("SELECT p.*, d.name as dept_name FROM positions p LEFT JOIN departments d ON p.department_id = d.id ORDER BY p.title")->fetchAll();
-                    foreach ($positions as $pos): ?>
-                    <option value="<?= $pos['id'] ?>"><?= h($pos['title']) ?><?= $pos['dept_name'] ? ' (' . h($pos['dept_name']) . ')' : '' ?></option>
-                    <?php endforeach; ?>
+                <select name="position" id="setup-position" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container">
+                    <option value="">Select Department First</option>
                 </select>
+                <script>
+                const setupDeptPositions = <?= json_encode(array_column($departments, 'positions', 'id')) ?>;
+                document.querySelector('[name="department_id"]').addEventListener('change', function() {
+                    const dept = this.value;
+                    const sel = document.getElementById('setup-position');
+                    sel.innerHTML = '<option value="">' + (dept ? 'Select Position' : 'Select Department First') + '</option>';
+                    if (dept && setupDeptPositions[dept]) {
+                        JSON.parse(setupDeptPositions[dept]).forEach(function(p) {
+                            if (p) sel.innerHTML += '<option value="' + p.replace(/"/g,'&quot;') + '">' + p + '</option>';
+                        });
+                    }
+                });
+                </script>
             </div>
         </div>
         <div class="flex gap-4">

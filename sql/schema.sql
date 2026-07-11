@@ -5,44 +5,30 @@ CREATE TABLE departments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
+    positions TEXT DEFAULT NULL COMMENT 'JSON array of position titles',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO departments (name, description) VALUES
-('IT Department', 'Information Technology'),
-('Human Resources', 'HR Department'),
-('Marketing', 'Marketing and Communications'),
-('Finance', 'Finance and Accounting');
-
-CREATE TABLE positions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    department_id INT NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
-);
-
-INSERT INTO positions (department_id, title) VALUES
-(1, 'Frontend Developer'),
-(1, 'Backend Developer'),
-(1, 'Full Stack Developer'),
-(2, 'HR Director'),
-(2, 'HR Coordinator'),
-(3, 'Marketing Manager'),
-(4, 'Finance Manager');
+INSERT INTO departments (name, description, positions) VALUES
+('IT Department', 'Information Technology', '["Frontend Developer","Backend Developer","Full Stack Developer"]'),
+('Human Resources', 'HR Department', '["HR Director","HR Coordinator"]'),
+('Marketing', 'Marketing and Communications', '["Marketing Manager"]'),
+('Finance', 'Finance and Accounting', '["Finance Manager"]');
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_id INT,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin', 'employee') NOT NULL DEFAULT 'employee',
     is_active TINYINT(1) DEFAULT 1,
+    code VARCHAR(255) DEFAULT NULL,
     last_login TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     INDEX (email),
-    INDEX (role)
+    INDEX (role),
+    INDEX (deleted_at)
 );
 
 INSERT INTO users (email, password_hash, role) VALUES
@@ -56,10 +42,28 @@ CREATE TABLE employees (
     employee_id VARCHAR(20) NOT NULL UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(50),
-    position_id INT,
     department_id INT,
+    position VARCHAR(255) DEFAULT NULL,
+    hire_date DATE,
+    salary DECIMAL(12,2),
+    daily_rate DECIMAL(12,2) DEFAULT NULL,
+    status ENUM('active', 'on_leave', 'terminated') DEFAULT 'active',
+    address TEXT,
+    avatar_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    employee_id VARCHAR(20) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(50),
+    department_id INT,
+    position VARCHAR(255) DEFAULT NULL,
     hire_date DATE,
     salary DECIMAL(12,2),
     daily_rate DECIMAL(12,2) DEFAULT NULL,
@@ -68,17 +72,16 @@ CREATE TABLE employees (
     avatar_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
     INDEX (employee_id),
     INDEX (status),
     INDEX (department_id)
 );
 
-INSERT INTO employees (employee_id, first_name, last_name, email, phone, position_id, department_id, hire_date, salary, status) VALUES
-('EMP-2024-089', 'Jason', 'Verzosa', 'j.verzosa@hrmscore.io', '+63 917 555 0123', 1, 1, '2024-01-15', 75000.00, 'active'),
-('EMP-2024-001', 'Alex', 'Rivera', 'a.rivera@hrmscore.io', '+63 917 555 0001', 2, 2, '2023-06-01', 95000.00, 'active');
+INSERT INTO employees (employee_id, first_name, last_name, phone, position, department_id, hire_date, salary, status) VALUES
+('EMP-2024-089', 'Jason', 'Verzosa', '+63 917 555 0123', 'Frontend Developer', 1, '2024-01-15', 75000.00, 'active'),
+('EMP-2024-001', 'Alex', 'Rivera', '+63 917 555 0001', 'Backend Developer', 2, '2023-06-01', 95000.00, 'active');
 
 CREATE TABLE attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,

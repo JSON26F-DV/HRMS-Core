@@ -28,7 +28,7 @@ $totalEmployees = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'ac
 $presentToday = $pdo->query("SELECT COUNT(*) FROM attendance WHERE date = CURDATE() AND status = 'present'")->fetchColumn();
 $absentToday = $pdo->query("SELECT COUNT(*) FROM attendance WHERE date = CURDATE() AND status = 'absent'")->fetchColumn();
 $pendingLeave = $pdo->query("SELECT COUNT(*) FROM leaves WHERE status = 'pending'")->fetchColumn();
-$payrollMonth = $pdo->query("SELECT COALESCE(SUM(net_pay), 0) FROM payroll WHERE MONTH(period_start) = MONTH(CURDATE()) AND YEAR(period_start) = YEAR(CURDATE())")->fetchColumn();
+$payrollMonth = $pdo->query("SELECT COALESCE(SUM(gross_pay), 0) FROM payroll WHERE MONTH(period_start) = MONTH(CURDATE()) AND YEAR(period_start) = YEAR(CURDATE())")->fetchColumn();
 
 // Get attendance data for chart based on filter
 if ($filter === '1year') {
@@ -73,23 +73,10 @@ if ($filter === '1year') {
 $departmentData = $pdo->query("
     SELECT d.name, COUNT(e.id) as employee_count
     FROM departments d
-    LEFT JOIN employees e ON d.id = e.department_id AND e.status = 'active'
+    LEFT JOIN employees e ON d.id = e.department_id
     GROUP BY d.id, d.name
-    HAVING employee_count > 0
-    ORDER BY employee_count DESC
+    ORDER BY d.name
 ")->fetchAll();
-
-// Department colors
-$deptColors = [
-    '#6366f1', // Indigo
-    '#8b5cf6', // Violet
-    '#ec4899', // Pink
-    '#f59e0b', // Amber
-    '#10b981', // Emerald
-    '#06b6d4', // Cyan
-    '#ef4444', // Red
-    '#3b82f6', // Blue
-];
 
 // Get latest audit log
 $latestAudit = $pdo->query("
@@ -200,87 +187,33 @@ $unpaidAttendance = $pdo->query("
             <div>
                 <p class="text-label-md text-secondary uppercase tracking-wider font-bold">Payroll Month</p>
                 <h3 class="font-headline-lg text-headline-lg mt-1 font-bold text-on-surface">
-                    $<?= number_format($payrollMonth / 1000000, 1) ?>M</h3>
+                    ₱<?= number_format($payrollMonth, 2) ?></h3>
             </div>
         </div>
     </div>
 
     <!-- Attendance Overview Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h4 class="font-headline-md text-headline-md">Attendance Overview</h4>
-                    <p class="text-label-sm text-secondary"><?= $filterLabel ?></p>
-                </div>
-                <div class="flex gap-2">
-                    <a href="?filter=7days" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '7days' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">7 Days</a>
-                    <a href="?filter=1month" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1month' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Month</a>
-                    <a href="?filter=1year" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1year' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Year</a>
-                </div>
-            </div>
-            <div class="h-48">
-                <canvas id="attendanceChart"></canvas>
-            </div>
-        </div>
-        <div class="space-y-4">
-            <!-- Distribution -->
-            <div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-border-subtle">
-                <h4 class="font-headline-md text-headline-md mb-3">Distribution</h4>
-                <div class="w-32 h-32 mx-auto">
-                    <canvas id="departmentPieChart"></canvas>
-                </div>
-                <div class="mt-3 flex flex-wrap justify-center gap-2">
-                    <?php foreach ($departmentData as $index => $dept): ?>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: <?= $deptColors[$index % count($deptColors)] ?>;"></span>
-                            <span class="text-xs text-secondary"><?= h($dept['name']) ?> (<?= $dept['employee_count'] ?>)</span>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <!-- Recent Activity -->
-            <div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-border-subtle">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
-                    <a class="text-primary text-xs font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
-                </div>
-                <?php if ($latestAudit): ?>
-                <div class="flex gap-2 p-2 hover:bg-surface-muted rounded-lg transition-colors">
-                    <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary text-xs">history</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs text-on-surface truncate"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
-                        <p class="text-xs text-secondary/70"><?= date('M d, h:i A', strtotime($latestAudit['created_at'])) ?></p>
-                    </div>
-                </div>
-                <?php else: ?>
-                <div class="text-center text-secondary py-2 text-xs">No recent activity</div>
-                <?php endif; ?>
-            </div>
-            <!-- Upcoming Event -->
-            <div class="bg-gradient-to-br from-primary to-on-primary-container p-4 rounded-2xl shadow-md text-white">
-                <div class="flex items-center gap-2 mb-2">
-                    <img src="<?= BASE_URL ?>/public/emojis/party-popper_1f389.png" class="w-6 h-6" alt="present">
-                    <span class="text-xs uppercase tracking-wider font-bold opacity-80">Upcoming Holiday</span>
-                </div>
-                <div class="flex justify-between items-start">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
+                <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h5 class="font-headline-md text-headline-md">Labor Day</h5>
-                        <p class="text-xs opacity-90">Monday, May 1, 2024</p>
+                        <h4 class="font-headline-md text-headline-md">Attendance Overview</h4>
+                        <p class="text-label-sm text-secondary"><?= $filterLabel ?></p>
                     </div>
-                    <div class="text-right">
-                        <span class="text-headline-lg font-headline-lg block leading-none">12</span>
-                        <span class="text-xs uppercase tracking-widest font-bold opacity-80">Days Left</span>
+                    <div class="flex gap-2">
+                        <a href="?filter=7days" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '7days' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">7 Days</a>
+                        <a href="?filter=1month" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1month' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Month</a>
+                        <a href="?filter=1year" class="px-3 py-1.5 rounded-lg text-label-sm font-bold transition-colors <?= $filter === '1year' ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:bg-primary/10' ?>">1 Year</a>
                     </div>
                 </div>
+                <div class="h-48">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Unpaid Attendance -->
-    <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
+            <!-- Unpaid Attendance -->
+            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-border-subtle">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -345,6 +278,60 @@ $unpaidAttendance = $pdo->query("
         <?php endif; ?>
     </div>
 </div>
+        <div class="flex flex-col gap-4 h-full">
+            <!-- Distribution -->
+            <div class="flex-1 bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-border-subtle flex flex-col">
+                <h4 class="font-headline-md text-headline-md mb-3">Distribution</h4>
+                <div class="flex-1 flex flex-col items-center justify-center">
+                    <div class="w-32 h-32">
+                        <canvas id="departmentPieChart"></canvas>
+                    </div>
+                    <div id="deptLegend" class="mt-3 flex flex-wrap justify-center gap-2"></div>
+                </div>
+            </div>
+            <!-- Recent Activity -->
+            <div class="flex-1 bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-border-subtle flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-label-md text-label-md uppercase tracking-wider font-bold">Recent Activity</h4>
+                    <a class="text-primary text-xs font-bold hover:underline" href="<?= BASE_URL ?>/admin/audit-logs">View All</a>
+                </div>
+                <div class="flex-1 flex items-center">
+                    <?php if ($latestAudit): ?>
+                    <div class="flex gap-2 p-2 hover:bg-surface-muted rounded-lg transition-colors w-full">
+                        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-primary text-xs">history</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-on-surface truncate"><strong><?= h($latestAudit['user_email'] ?? 'System') ?></strong> <?= h($latestAudit['action']) ?></p>
+                            <p class="text-xs text-secondary/70"><?= date('M d, h:i A', strtotime($latestAudit['created_at'])) ?></p>
+                        </div>
+                    </div>
+                    <?php else: ?>
+                    <div class="text-center text-secondary py-2 text-xs w-full">No recent activity</div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <!-- Upcoming Event -->
+            <div class="flex-1 bg-gradient-to-br from-primary to-on-primary-container p-4 rounded-2xl shadow-md text-white flex flex-col">
+                <div class="flex items-center gap-2 mb-2">
+                    <img src="<?= BASE_URL ?>/public/emojis/party-popper_1f389.png" class="w-6 h-6" alt="present">
+                    <span class="text-xs uppercase tracking-wider font-bold opacity-80">Upcoming Holiday</span>
+                </div>
+                <div class="flex-1 flex items-center">
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <h5 class="font-headline-md text-headline-md">Labor Day</h5>
+                            <p class="text-xs opacity-90">Monday, May 1, 2024</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-headline-lg font-headline-lg block leading-none">12</span>
+                            <span class="text-xs uppercase tracking-widest font-bold opacity-80">Days Left</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
@@ -428,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const departmentData = <?= json_encode(array_values($departmentData)) ?>;
         const deptLabels = departmentData.map(d => d.name);
         const deptCounts = departmentData.map(d => parseInt(d.employee_count));
-        const deptColors = <?= json_encode(array_values(array_map(function($_, $v) { return $v; }, array_keys($deptColors), $deptColors))) ?>;
+        const deptColors = departmentData.map(() => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'));
         
         new Chart(departmentCtx, {
             type: 'doughnut',
@@ -458,6 +445,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             }
+        });
+
+        const legendEl = document.getElementById('deptLegend');
+        deptLabels.forEach(function(label, i) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-1.5';
+            div.innerHTML = '<span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color:' + deptColors[i] + '"></span><span class="text-xs text-secondary">' + label + ' (' + deptCounts[i] + ')</span>';
+            legendEl.appendChild(div);
         });
     }
 });

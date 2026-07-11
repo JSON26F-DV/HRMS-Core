@@ -28,7 +28,7 @@ $routes = [
     '/admin/performance-reports'    => 'pages/admin/performance_reports.php',
     '/admin/audit-logs'             => 'pages/admin/audit_logs.php',
     '/admin/system-settings'        => 'pages/admin/system_settings.php',
-
+    '/admin/cleanup-deleted'        => 'handlers/cleanup_deleted.php',
 
     '/employee/dashboard'           => 'pages/employee/dashboard.php',
     '/employee/my-payslips'         => 'pages/employee/my_payslips.php',

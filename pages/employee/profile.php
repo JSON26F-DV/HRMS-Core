@@ -6,10 +6,10 @@ require_once __DIR__ . '/../../includes/header.php';
 
 $userId = $_SESSION['user_id'];
 $stmt = $pdo->prepare("
-    SELECT e.*, d.name as department_name, p.title as position_title
+    SELECT e.*, d.name as department_name, e.position as position_title, u.email as email
     FROM employees e
     LEFT JOIN departments d ON e.department_id = d.id
-    LEFT JOIN positions p ON e.position_id = p.id
+    LEFT JOIN users u ON e.user_id = u.id
     WHERE e.user_id = ?
 ");
 $stmt->execute([$userId]);

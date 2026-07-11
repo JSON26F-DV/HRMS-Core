@@ -3,30 +3,85 @@ requireLogin();
 requireAdmin();
 $pageTitle = 'Edit Employee | HRMS Core';
 $currentPage = 'edit_employee';
-require_once __DIR__ . '/../../includes/header.php';
 
 $id = $_GET['id'] ?? 0;
-$stmt = $pdo->prepare("SELECT * FROM employees WHERE id = ?");
+$stmt = $pdo->prepare("SELECT e.*, u.email as user_email, u.role as user_role, u.is_active as user_is_active, u.deleted_at FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.id = ?");
 $stmt->execute([$id]);
 $emp = $stmt->fetch();
 if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
 
-$departments = $pdo->query("SELECT * FROM departments ORDER BY name")->fetchAll();
-$positions = $pdo->query("SELECT p.*, d.name as dept_name FROM positions p LEFT JOIN departments d ON p.department_id = d.id ORDER BY p.title")->fetchAll();
+$deleted = $emp['deleted_at'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stmt = $pdo->prepare("UPDATE employees SET first_name=?, last_name=?, email=?, phone=?, position_id=?, department_id=?, hire_date=?, salary=?, daily_rate=?, address=?, status=? WHERE id=?");
-    $stmt->execute([
-        $_POST['first_name'], $_POST['last_name'], $_POST['email'], $_POST['phone'],
-        $_POST['position_id'] ?: null, $_POST['department_id'] ?: null,
-        $_POST['hire_date'] ?: null, $_POST['salary'] ?: null,
-        $_POST['daily_rate'] ?: null,
-        $_POST['address'] ?? '', $_POST['status'] ?? 'active', $id
-    ]);
-    logAudit('update', 'employee', $id, 'Updated employee: '.$_POST['first_name'].' '.$_POST['last_name']);
-    header('Location: ' . BASE_URL . '/admin/employees');
-    exit;
+    if (isset($_POST['delete'])) {
+        if (!$emp['user_id']) {
+            $_SESSION['_flash'] = ['error' => 'No user account linked to this employee.'];
+            header('Location: ' . BASE_URL . '/admin/employees');
+            exit;
+        }
+        $adminPw = $_POST['admin_password'] ?? '';
+        $adminStmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = ?");
+        $adminStmt->execute([$_SESSION['user_id']]);
+        $admin = $adminStmt->fetch();
+        if (!$admin || !password_verify($adminPw, $admin['password_hash'])) {
+            $_SESSION['_flash'] = ['error' => 'Incorrect admin password.'];
+            header('Location: ' . BASE_URL . '/admin/edit-employee?id=' . $id);
+            exit;
+        }
+        $pdo->prepare("UPDATE users SET deleted_at = NOW() WHERE id = ?")->execute([$emp['user_id']]);
+        try { logAudit('delete', 'employee', $id, 'Soft-deleted employee: '.$emp['first_name'].' '.$emp['last_name']); } catch (Exception $e) {}
+        $_SESSION['_flash'] = ['success' => 'Employee deleted.'];
+        header('Location: ' . BASE_URL . '/admin/employees');
+        exit;
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare("UPDATE employees SET first_name=?, last_name=?, phone=?, position=?, department_id=?, hire_date=?, salary=?, daily_rate=?, address=?, status=?, avatar_url=? WHERE id=?");
+        $stmt->execute([
+            $_POST['first_name'], $_POST['last_name'], $_POST['phone'],
+            $_POST['position'] ?? null, $_POST['department_id'] ?: null,
+            $_POST['hire_date'] ?: null, $_POST['salary'] ?: null,
+            $_POST['daily_rate'] ?: null,
+            $_POST['address'] ?? '', $_POST['status'] ?? 'active',
+            $_POST['avatar_url'] ?? null, $id
+        ]);
+
+        if ($emp['user_id']) {
+            $userStmt = "UPDATE users SET role=?, is_active=?";
+            $params = [$_POST['role'] ?? 'employee', isset($_POST['is_active']) ? 1 : 0];
+            if (!empty($_POST['password'])) {
+                $userStmt .= ", password_hash=?";
+                $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+            }
+            if (!empty($_POST['email'])) {
+                $userStmt .= ", email=?";
+                $params[] = $_POST['email'];
+            }
+            $userStmt .= " WHERE id=?";
+            $params[] = $emp['user_id'];
+            $pdo->prepare($userStmt)->execute($params);
+        } elseif (!empty($_POST['email']) && !empty($_POST['password'])) {
+            $stmtU = $pdo->prepare("INSERT INTO users (email, password_hash, role, is_active) VALUES (?, ?, ?, ?)");
+            $stmtU->execute([$_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT), $_POST['role'] ?? 'employee', isset($_POST['is_active']) ? 1 : 0]);
+            $pdo->prepare("UPDATE employees SET user_id = ? WHERE id = ?")->execute([$pdo->lastInsertId(), $id]);
+        }
+        $pdo->commit();
+        try { logAudit('update', 'employee', $id, 'Updated employee: '.$_POST['first_name'].' '.$_POST['last_name']); } catch (Exception $e) {}
+        $_SESSION['_flash'] = ['success' => 'Employee updated successfully.'];
+        header('Location: ' . BASE_URL . '/admin/employees');
+        exit;
+    } catch (Exception $e) {
+        try { $pdo->rollBack(); } catch (Exception $e2) {}
+        $_SESSION['_flash'] = ['error' => 'Failed to update employee. Check your input and try again.'];
+        header('Location: ' . BASE_URL . '/admin/employees');
+        exit;
+    }
 }
+
+require_once __DIR__ . '/../../includes/header.php';
+$departments = $pdo->query("SELECT * FROM departments ORDER BY name")->fetchAll();
+$hasUser = !is_null($emp['user_id']);
 ?>
 <div class="max-w-3xl mx-auto">
     <div class="flex items-center gap-4 mb-8">
@@ -39,7 +94,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
+    <?php if ($deleted): ?>
+        <div class="p-4 bg-error-container text-on-error-container rounded-lg font-semibold mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined">warning</span>
+            This employee has been deleted. Restore or wait for permanent removal.
+        </div>
+    <?php endif; ?>
+
     <form method="POST" class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-8 space-y-6">
+        <h3 class="font-headline-md text-headline-md border-b border-border-subtle pb-4">Employee Information</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-1.5">
                 <label class="font-label-md text-label-md text-on-surface-variant">First Name</label>
@@ -51,7 +114,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="space-y-1.5">
                 <label class="font-label-md text-label-md text-on-surface-variant">Email</label>
-                <input name="email" type="email" value="<?= h($emp['email']) ?>" required class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
+                <input name="email" type="email" value="<?= h($emp['user_email'] ?? '') ?>" <?= $hasUser ? 'required' : '' ?> class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
+                <?php if (!$hasUser): ?>
+                    <p class="text-xs text-secondary mt-1">No user account. Fill email + password below to create one.</p>
+                <?php endif; ?>
             </div>
             <div class="space-y-1.5">
                 <label class="font-label-md text-label-md text-on-surface-variant">Phone</label>
@@ -68,11 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="space-y-1.5">
                 <label class="font-label-md text-label-md text-on-surface-variant">Position</label>
-                <select name="position_id" id="position_id" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
+                <select name="position" id="position" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
                     <option value="">Select Department First</option>
-                    <?php foreach ($positions as $pos): ?>
-                    <option value="<?= $pos['id'] ?>" data-dept="<?= $pos['department_id'] ?>" <?= $pos['id'] == $emp['position_id'] ? 'selected' : '' ?>><?= h($pos['title']) ?></option>
-                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="space-y-1.5">
@@ -95,26 +158,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="terminated" <?= $emp['status'] === 'terminated' ? 'selected' : '' ?>>Terminated</option>
                 </select>
             </div>
+            <div class="space-y-1.5">
+                <label class="font-label-md text-label-md text-on-surface-variant">Avatar URL</label>
+                <input name="avatar_url" value="<?= h($emp['avatar_url'] ?? '') ?>" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10" placeholder="https://example.com/avatar.jpg">
+            </div>
         </div>
         <div class="space-y-1.5">
             <label class="font-label-md text-label-md text-on-surface-variant">Address</label>
             <textarea name="address" rows="3" class="w-full px-4 py-3 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10"><?= h($emp['address'] ?? '') ?></textarea>
         </div>
+
+        <h3 class="font-headline-md text-headline-md border-b border-border-subtle pb-4 pt-4">User Account</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-1.5">
+                <label class="font-label-md text-label-md text-on-surface-variant"><?= $hasUser ? 'New ' : '' ?>Password</label>
+                <div class="relative">
+                    <input name="password" id="password" type="password" class="w-full h-12 pr-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10" placeholder="<?= $hasUser ? 'Leave blank to keep current' : 'Min 6 characters' ?>" <?= $hasUser ? '' : 'required' ?>>
+                    <button type="button" onclick="togglePass('password','pass-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-xl" id="pass-icon">visibility</span>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <label class="font-label-md text-label-md text-on-surface-variant">Confirm Password</label>
+                <div class="relative">
+                    <input name="confirm_password" id="confirm_password" type="password" class="w-full h-12 pr-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10" placeholder="<?= $hasUser ? 'Only if changing password' : 'Repeat password' ?>" <?= $hasUser ? '' : 'required' ?>>
+                    <button type="button" onclick="togglePass('confirm_password','confirm-pass-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-xl" id="confirm-pass-icon">visibility</span>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <label class="font-label-md text-label-md text-on-surface-variant">Role</label>
+                <select name="role" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
+                    <option value="employee" <?= ($emp['user_role'] ?? 'employee') === 'employee' ? 'selected' : '' ?>>Employee</option>
+                    <option value="admin" <?= ($emp['user_role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
+                </select>
+            </div>
+            <div class="space-y-1.5 flex items-end pb-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="is_active" <?= ($emp['user_is_active'] ?? 1) ? 'checked' : '' ?> class="w-4 h-4 rounded border-border-subtle text-primary focus:ring-primary-container">
+                    <span class="font-label-md text-label-md text-on-surface-variant">Active</span>
+                </label>
+            </div>
+        </div>
+
         <div class="flex gap-4 pt-4">
-            <button type="submit" class="px-8 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Update Employee</button>
+            <button type="button" onclick="confirmSave()" class="px-8 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Update Employee</button>
+            <?php if (!$deleted && $hasUser): ?>
+                <button type="button" onclick="confirmDelete()" class="px-8 py-3 bg-error-container text-on-error-container font-bold rounded-lg hover:brightness-95 transition-all shadow-sm">Delete Employee</button>
+            <?php endif; ?>
             <a href="<?= BASE_URL ?>/admin/employees" class="px-8 py-3 border border-border-subtle rounded-lg font-bold text-secondary hover:bg-surface-muted transition-all">Cancel</a>
         </div>
     </form>
+
+    <form method="POST" id="delete-form" class="hidden">
+        <input type="hidden" name="delete" value="1">
+        <input type="hidden" name="admin_password" id="admin-password-input">
+    </form>
 </div>
 <script>
+const deptPositions = <?= json_encode(array_column($departments, 'positions', 'id')) ?>;
+const empPosition = <?= json_encode($emp['position'] ?? '') ?>;
 document.querySelector('[name="department_id"]').addEventListener('change', function() {
     const dept = this.value;
-    document.querySelectorAll('#position_id option').forEach(opt => {
-        if (opt.value === '') { opt.text = dept ? 'Select Position' : 'Select Department First'; return; }
-        opt.style.display = !dept || opt.dataset.dept === dept ? '' : 'none';
-    });
+    const sel = document.getElementById('position');
+    sel.innerHTML = '<option value="">' + (dept ? 'Select Position' : 'Select Department First') + '</option>';
+    if (dept && deptPositions[dept]) {
+        JSON.parse(deptPositions[dept]).forEach(function(p) {
+            if (p) {
+                var selected = p === empPosition ? ' selected' : '';
+                sel.innerHTML += '<option value="' + p.replace(/"/g,'&quot;') + '"' + selected + '>' + p + '</option>';
+            }
+        });
+    }
 });
 document.querySelector('[name="department_id"]').dispatchEvent(new Event('change'));
+function togglePass(id, iconId) {
+    const inp = document.getElementById(id);
+    const icon = document.getElementById(iconId);
+    if (inp.type === 'password') { inp.type = 'text'; icon.innerText = 'visibility_off'; }
+    else { inp.type = 'password'; icon.innerText = 'visibility'; }
+}
+function confirmSave() {
+    const pw = document.getElementById('password').value;
+    const cp = document.getElementById('confirm_password').value;
+    if (pw !== cp) { Swal.fire({ icon: 'error', title: 'Passwords do not match.' }); return; }
+    if (pw.length > 0 && pw.length < 6) { Swal.fire({ icon: 'error', title: 'Password must be at least 6 characters.' }); return; }
+    Swal.fire({ title: 'Update employee?', icon: 'question', showCancelButton: true, confirmButtonText: 'Update', cancelButtonText: 'Cancel', confirmButtonColor: '#006d43' })
+        .then(r => { if (r.isConfirmed) document.querySelector('form').submit(); });
+}
+function confirmDelete() {
+    Swal.fire({
+        title: 'Delete employee?',
+        text: 'Enter your admin password to confirm.',
+        icon: 'warning',
+        input: 'password',
+        inputPlaceholder: 'Your admin password',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        confirmButtonColor: '#d33',
+        inputValidator: function(v) { if (!v) return 'Password is required.'; }
+    }).then(r => {
+        if (r.isConfirmed) {
+            document.getElementById('admin-password-input').value = r.value;
+            document.getElementById('delete-form').submit();
+        }
+    });
+}
 </script>
 <style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

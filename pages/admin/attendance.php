@@ -62,7 +62,7 @@ if ($resetFilters) {
 $deptList = $pdo->query("SELECT * FROM departments ORDER BY name")->fetchAll();
 
 // Summary
-$totalActiveVal = $pdo->query("SELECT COUNT(*) FROM employees WHERE status='active'")->fetchColumn();
+$totalActiveVal = $pdo->query("SELECT COUNT(*) FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.status='active' AND (u.role IS NULL OR u.role != 'admin')")->fetchColumn();
 $presentVal = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE date=? AND status='present'");
 $presentVal->execute([$today]);
 $absentVal = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE date=? AND status='absent'");
@@ -71,7 +71,7 @@ $lateVal = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE date=? AND statu
 $lateVal->execute([$today]);
 $halfVal = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE date=? AND status='half_day'");
 $halfVal->execute([$today]);
-$onLeaveVal = $pdo->query("SELECT COUNT(*) FROM employees WHERE status='on_leave'")->fetchColumn();
+$onLeaveVal = $pdo->query("SELECT COUNT(*) FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.status='on_leave' AND (u.id IS NULL OR u.role != 'admin')")->fetchColumn();
 
 // Build query
 $where = ["a.date = ?"];
@@ -92,12 +92,14 @@ if ($filterSearch) {
     $params[] = $s;
 }
 
+$where[] = "(u.id IS NULL OR u.role != 'admin')";
 $attQuery = $pdo->prepare("
     SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, e.department_id, d.name as department_name,
            TIMEDIFF(a.clock_out, a.clock_in) as working_hours
     FROM attendance a
     JOIN employees e ON a.employee_id = e.id
     LEFT JOIN departments d ON e.department_id = d.id
+    LEFT JOIN users u ON e.user_id = u.id
     WHERE " . implode(' AND ', $where) . "
     ORDER BY e.last_name ASC
 ");
@@ -105,8 +107,8 @@ $attQuery->execute($params);
 $records = $attQuery->fetchAll();
 
 $recordedIds = array_column($records, 'employee_id');
-$extraWhere = $filterDept ? " AND department_id = " . (int) $filterDept : '';
-$unrecorded = $pdo->prepare("SELECT id, first_name, last_name, employee_id FROM employees WHERE status='active'$extraWhere AND id NOT IN (" . ($recordedIds ? implode(',', $recordedIds) : '0') . ") ORDER BY last_name");
+$extraWhere = $filterDept ? " AND e.department_id = " . (int) $filterDept : '';
+$unrecorded = $pdo->prepare("SELECT e.id, e.first_name, e.last_name, e.employee_id, e.status FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE (u.id IS NULL OR u.role != 'admin')$extraWhere AND e.id NOT IN (" . ($recordedIds ? implode(',', $recordedIds) : '0') . ") ORDER BY e.last_name");
 $unrecorded->execute();
 $unrecordedEmps = $unrecorded->fetchAll();
 
@@ -139,15 +141,13 @@ if ($hView === 'date') {
         }
         $whereClause = implode(' AND ', $w);
         // Count total
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance a WHERE $whereClause");
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN users u ON e.user_id = u.id WHERE $whereClause AND (u.id IS NULL OR u.role != 'admin')");
         $countStmt->execute($p);
         $histTotalCount = $countStmt->fetchColumn();
         // Fetch with pagination
-        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id WHERE $whereClause ORDER BY a.date DESC, e.last_name LIMIT :limit OFFSET :offset");
-        foreach ($p as $i => $val) { $stmt->bindValue($i + 1, $val); }
-        $stmt->bindValue('limit', $histPerPage, PDO::PARAM_INT);
-        $stmt->bindValue('offset', $histOffset, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id LEFT JOIN users u ON e.user_id = u.id WHERE $whereClause AND (u.id IS NULL OR u.role != 'admin') ORDER BY a.date DESC, e.last_name LIMIT ? OFFSET ?");
+        $histParams = array_merge($p, [$histPerPage, $histOffset]);
+        $stmt->execute($histParams);
         $historyRows = $stmt->fetchAll();
     }
 } elseif ($hView === 'emp') {
@@ -172,15 +172,13 @@ if ($hView === 'date') {
         }
         $whereClause = implode(' AND ', $w);
         // Count total
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance a WHERE $whereClause");
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN users u ON e.user_id = u.id WHERE $whereClause AND (u.id IS NULL OR u.role != 'admin')");
         $countStmt->execute($p);
         $histTotalCount = $countStmt->fetchColumn();
         // Fetch with pagination
-        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id WHERE $whereClause ORDER BY a.date DESC, e.last_name LIMIT :limit OFFSET :offset");
-        foreach ($p as $i => $val) { $stmt->bindValue($i + 1, $val); }
-        $stmt->bindValue('limit', $histPerPage, PDO::PARAM_INT);
-        $stmt->bindValue('offset', $histOffset, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt = $pdo->prepare("SELECT a.*, e.first_name, e.last_name, e.employee_id as emp_code, d.name as department_name, TIMEDIFF(a.clock_out, a.clock_in) as wh FROM attendance a JOIN employees e ON a.employee_id = e.id LEFT JOIN departments d ON e.department_id = d.id LEFT JOIN users u ON e.user_id = u.id WHERE $whereClause AND (u.id IS NULL OR u.role != 'admin') ORDER BY a.date DESC, e.last_name LIMIT ? OFFSET ?");
+        $histParams = array_merge($p, [$histPerPage, $histOffset]);
+        $stmt->execute($histParams);
         $historyRows = $stmt->fetchAll();
     }
 }
@@ -203,7 +201,7 @@ if (isset($_GET['export'])) {
 ?>
 <script>
     function confirmDeleteDepartment(id) {
-        Swal.fire({ title: 'Delete?', text: 'This will also delete all positions.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete' }).then(r => { if (r.isConfirmed) document.getElementById('del-dept-' + id).submit() });
+        Swal.fire({ title: 'Delete?', text: 'This will remove all employees from this department.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete' }).then(r => { if (r.isConfirmed) document.getElementById('del-dept-' + id).submit() });
     }
     function confirmDeletePayroll(id) {
         Swal.fire({ title: 'Delete draft?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Delete' }).then(r => { if (r.isConfirmed) document.getElementById('del-pay-' + id).submit() });
@@ -436,7 +434,7 @@ if (isset($_GET['export'])) {
                                     <td class="px-4 py-3 text-body-sm text-secondary">—</td>
                                     <td class="px-4 py-3 text-body-sm text-secondary">—</td>
                                     <td class="px-4 py-3">
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-green-100 text-green-700">New</span>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase <?= $u['status'] === 'active' ? 'bg-green-100 text-green-700' : ($u['status'] === 'on_leave' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500') ?>"><?= ucfirst(str_replace('_', ' ', $u['status'] ?? 'new')) ?></span>
                                     </td>
                                     <td class="px-4 py-3 text-body-sm text-secondary">—</td>
                                 </tr>
@@ -634,7 +632,7 @@ if (isset($_GET['export'])) {
                         oninput="filterEmp()">
                     <select name="h_emp[]" id="emp-list" multiple
                         class="h-40 px-3 bg-surface-muted border border-border-subtle rounded-lg text-sm w-full">
-                        <?php $allEmps = $pdo->query("SELECT id, first_name, last_name, employee_id FROM employees ORDER BY last_name")->fetchAll();
+                        <?php $allEmps = $pdo->query("SELECT e.id, e.first_name, e.last_name, e.employee_id FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE u.id IS NULL OR u.role != 'admin' ORDER BY e.last_name")->fetchAll();
                         foreach ($allEmps as $e): ?>
                             <option value="<?= $e['id'] ?>">
                                 <?= h($e['first_name'] . ' ' . $e['last_name'] . ' (' . $e['employee_id'] . ')') ?>
