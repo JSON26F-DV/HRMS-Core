@@ -81,10 +81,10 @@ if (isset($_GET['manage'])) {
 
 $departments = $pdo->query("SELECT d.*, COUNT(e.id) as employee_count FROM departments d LEFT JOIN employees e ON e.department_id = d.id GROUP BY d.id ORDER BY d.name")->fetchAll();
 ?>
-<div class="space-y-8">
+<div class="max-w-7xl mx-auto space-y-8">
     <div class="flex justify-between items-end">
         <div>
-            <h2 class="font-headline-lg text-headline-lg text-on-surface">Departments</h2>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2"><img src="<?= BASE_URL ?>/public/emojis/Title%20emojis/department.png" class="w-8 h-8" alt=""> Departments</h2>
             <p class="text-text-body font-body-md">Manage your organization departments.</p>
         </div>
 
@@ -251,4 +251,5 @@ $departments = $pdo->query("SELECT d.*, COUNT(e.id) as employee_count FROM depar
     </div>
     <?php endif; ?>
 </div>
+<style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

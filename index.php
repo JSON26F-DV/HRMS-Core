@@ -27,7 +27,6 @@ $routes = [
     '/admin/payroll'                => 'pages/admin/payroll.php',
     '/admin/performance-reports'    => 'pages/admin/performance_reports.php',
     '/admin/audit-logs'             => 'pages/admin/audit_logs.php',
-    '/admin/user-management'        => 'pages/admin/user_management.php',
     '/admin/system-settings'        => 'pages/admin/system_settings.php',
 
 

@@ -1,75 +1,61 @@
-<aside
-    class="h-screen w-72 fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex flex-col py-gutter px-4 z-50 overflow-y-auto">
-    <div class="mb-8 px-2 flex items-center gap-3">
-        <div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
-            <span class="material-symbols-outlined text-on-primary-container"
-                style="font-variation-settings: 'FILL' 1;">domain</span>
-        </div>
-        <div>
-            <h1 class="font-headline-md text-headline-md font-bold text-on-surface">HRMS Core</h1>
-            <p class="text-label-sm text-secondary">Management Portal</p>
-        </div>
-    </div>
-    <nav class="space-y-1">
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'dashboard' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/dashboard">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'dashboard' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">dashboard</span>
-            <span class="font-body-md text-body-md">Dashboard</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= in_array($currentPage, ['employees', 'add_employee', 'edit_employee', 'employee_profile']) ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/employees">
-            <span
-                class="material-symbols-outlined <?= in_array($currentPage, ['employees', 'add_employee', 'edit_employee', 'employee_profile']) ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">badge</span>
-            <span class="font-body-md text-body-md">Employees</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'departments' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/departments">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'departments' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">domain</span>
-            <span class="font-body-md text-body-md">Departments</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'attendance' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/attendance">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'attendance' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">event_available</span>
-            <span class="font-body-md text-body-md">Attendance</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'leave_management' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/leave-management">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'leave_management' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">event_busy</span>
-            <span class="font-body-md text-body-md">Leave</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'payroll' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/payroll">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'payroll' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">payments</span>
-            <span class="font-body-md text-body-md">Payroll</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'performance_reports' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/performance-reports">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'performance_reports' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">trending_up</span>
-            <span class="font-body-md text-body-md">Performance</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'audit_logs' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/audit-logs">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'audit_logs' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">assessment</span>
-            <span class="font-body-md text-body-md">Audit Logs</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'user_management' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/user-management">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'user_management' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">group</span>
-            <span class="font-body-md text-body-md">Users</span>
-        </a>
-        <a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 <?= $currentPage === 'system_settings' ? 'text-primary font-bold bg-surface-container-low border-r-4 border-primary' : 'text-secondary hover:bg-surface-container hover:text-primary' ?>"
-            href="<?= BASE_URL ?>/admin/system-settings">
-            <span
-                class="material-symbols-outlined <?= $currentPage === 'system_settings' ? "style='font-variation-settings: \"FILL\" 1;'" : '' ?>">settings</span>
-            <span class="font-body-md text-body-md">Settings</span>
-        </a>
-    </nav>
+<aside id="default-sidebar" class="fixed top-16 left-0 z-40 w-64 h-[calc(100%-4rem)] transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
+   <div class="h-full px-3 py-4 overflow-y-auto bg-neutral-primary-soft border-e border-default">
+      <ul class="space-y-2 font-medium">
+         <li>
+            <a href="<?= BASE_URL ?>/admin/dashboard" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'dashboard' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6.025A7.5 7.5 0 1 0 17.975 14H10V6.025Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 3c-.169 0-.334.014-.5.025V11h7.975c.011-.166.025-.331.025-.5A7.5 7.5 0 0 0 13.5 3Z"/></svg>
+               <span class="ms-3">Dashboard</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/employees" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= in_array($currentPage, ['employees', 'add_employee', 'edit_employee', 'employee_profile']) ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M16 19h4a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-2m-2.236-4a3 3 0 1 0 0-4M3 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+               <span class="ms-3">Employees</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/departments" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'departments' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 13h3.439a.991.991 0 0 1 .908.6 3.978 3.978 0 0 0 7.306 0 .99.99 0 0 1 .908-.6H20M4 13v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6M4 13l2-9h12l2 9M9 7h6m-7 3h8"/></svg>
+               <span class="ms-3">Departments</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/attendance" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'attendance' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10V6a3 3 0 0 1 3-3v0a3 3 0 0 1 3 3v4m3-2 .917 11.923A1 1 0 0 1 17.92 21H6.08a1 1 0 0 1-.997-1.077L6 8h12Z"/></svg>
+               <span class="ms-3">Attendance</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/leave-management" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'leave_management' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10"/></svg>
+               <span class="ms-3">Leave</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/payroll" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'payroll' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v14M9 5v14M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>
+               <span class="ms-3">Payroll</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/performance-reports" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'performance_reports' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 16l4-8 4 4 8-8"/></svg>
+               <span class="ms-3">Performance</span>
+            </a>
+         </li>
+         <li>
+            <a href="<?= BASE_URL ?>/admin/audit-logs" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'audit_logs' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H4m12 0-4 4m4-4-4-4m3-4h2a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-2"/></svg>
+               <span class="ms-3">Audit Logs</span>
+            </a>
+         </li>
+
+         <li>
+            <a href="<?= BASE_URL ?>/admin/system-settings" class="flex items-center px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group <?= $currentPage === 'system_settings' ? 'bg-neutral-tertiary text-fg-brand' : '' ?>">
+               <svg class="w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 1.5"/></svg>
+               <span class="ms-3">Settings</span>
+            </a>
+         </li>
+      </ul>
+   </div>
 </aside>

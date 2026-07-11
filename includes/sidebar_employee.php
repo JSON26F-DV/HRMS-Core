@@ -1,4 +1,4 @@
-<aside class="h-screen w-72 fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex flex-col py-6 px-4 z-50">
+<aside class="h-[calc(100%-4rem)] w-64 fixed left-0 top-16 bg-neutral-primary-soft border-r border-default flex flex-col py-4 px-3 z-40">
     <div class="mb-10 px-4">
         <h1 class="font-headline-md text-headline-md font-bold text-on-surface">HRMS Core</h1>
         <p class="text-secondary text-sm">Employee Portal</p>

@@ -15,7 +15,7 @@ $payrollMonth = $pdo->query("SELECT COALESCE(SUM(net_pay), 0) FROM payroll WHERE
 <div class="max-w-7xl mx-auto space-y-8">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-            <h2 class="font-headline-lg text-headline-lg text-on-surface">Dashboard Overview</h2>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2"><img src="<?= BASE_URL ?>/public/emojis/Title%20emojis/dashboard.png" class="w-8 h-8" alt=""> Dashboard Overview</h2>
             <p class="text-body-md text-secondary mt-1">Welcome back. Here's what's happening today in your
                 organization.</p>
         </div>
@@ -186,7 +186,6 @@ $payrollMonth = $pdo->query("SELECT COALESCE(SUM(net_pay), 0) FROM payroll WHERE
     </div>
 </div>
 
-<?php $pageScripts = '
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const statsCards = document.querySelectorAll(".stats-card");
@@ -200,6 +199,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <style>
+main {
+    background: linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)), url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;
+    min-height: 100vh;
+}
 .stats-card { position: relative; overflow: hidden; }
 .stats-card::before {
     content: "";
@@ -216,5 +219,5 @@ document.addEventListener("DOMContentLoaded", () => {
 }
 .stats-card:hover::before { width: 300px; height: 300px; }
 .stats-card > * { position: relative; z-index: 1; }
-</style>';
-require_once __DIR__ . '/../../includes/footer.php'; ?>
+</style>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>

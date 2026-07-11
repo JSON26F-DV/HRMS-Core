@@ -15,11 +15,12 @@ $departments = $pdo->query("SELECT * FROM departments ORDER BY name")->fetchAll(
 $positions = $pdo->query("SELECT p.*, d.name as dept_name FROM positions p LEFT JOIN departments d ON p.department_id = d.id ORDER BY p.title")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stmt = $pdo->prepare("UPDATE employees SET first_name=?, last_name=?, email=?, phone=?, position_id=?, department_id=?, hire_date=?, salary=?, address=?, status=? WHERE id=?");
+    $stmt = $pdo->prepare("UPDATE employees SET first_name=?, last_name=?, email=?, phone=?, position_id=?, department_id=?, hire_date=?, salary=?, daily_rate=?, address=?, status=? WHERE id=?");
     $stmt->execute([
         $_POST['first_name'], $_POST['last_name'], $_POST['email'], $_POST['phone'],
         $_POST['position_id'] ?: null, $_POST['department_id'] ?: null,
         $_POST['hire_date'] ?: null, $_POST['salary'] ?: null,
+        $_POST['daily_rate'] ?: null,
         $_POST['address'] ?? '', $_POST['status'] ?? 'active', $id
     ]);
     logAudit('update', 'employee', $id, 'Updated employee: '.$_POST['first_name'].' '.$_POST['last_name']);
@@ -33,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span class="material-symbols-outlined text-secondary">arrow_back</span>
         </a>
         <div>
-            <h2 class="font-headline-lg text-headline-lg text-on-surface">Edit Employee</h2>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2">✏️ Edit Employee</h2>
             <p class="text-text-body font-body-md">Update employee information for <?= h($emp['first_name'] . ' ' . $emp['last_name']) ?></p>
         </div>
     </div>
@@ -83,6 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input name="salary" type="number" step="0.01" value="<?= h($emp['salary'] ?? '') ?>" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
             </div>
             <div class="space-y-1.5">
+                <label class="font-label-md text-label-md text-on-surface-variant">Daily Rate</label>
+                <input name="daily_rate" type="number" step="0.01" value="<?= h($emp['daily_rate'] ?? '') ?>" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10" placeholder="2500.00">
+            </div>
+            <div class="space-y-1.5">
                 <label class="font-label-md text-label-md text-on-surface-variant">Status</label>
                 <select name="status" class="w-full h-12 px-4 bg-surface-muted border border-border-subtle rounded-lg focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10">
                     <option value="active" <?= $emp['status'] === 'active' ? 'selected' : '' ?>>Active</option>
@@ -111,4 +116,5 @@ document.querySelector('[name="department_id"]').addEventListener('change', func
 });
 document.querySelector('[name="department_id"]').dispatchEvent(new Event('change'));
 </script>
+<style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

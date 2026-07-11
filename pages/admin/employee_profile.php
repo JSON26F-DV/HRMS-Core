@@ -22,7 +22,7 @@ if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
         <a href="<?= BASE_URL ?>/admin/employees" class="p-2 rounded-lg hover:bg-surface-container transition-colors">
             <span class="material-symbols-outlined text-secondary">arrow_back</span>
         </a>
-        <h2 class="font-headline-lg text-headline-lg text-on-surface">Employee Profile</h2>
+        <h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2">👤 Employee Profile</h2>
     </div>
 
     <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-border-subtle p-8">
@@ -91,4 +91,5 @@ if (!$emp) { header('Location: ' . BASE_URL . '/admin/employees'); exit; }
         </div>
     </div>
 </div>
+<style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

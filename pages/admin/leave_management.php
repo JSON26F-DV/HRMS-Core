@@ -21,10 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['lea
     exit;
 }
 ?>
-<div class="space-y-8">
+<div class="max-w-7xl mx-auto space-y-8">
     <div class="flex justify-between items-end">
         <div>
-            <h2 class="font-headline-lg text-headline-lg text-on-surface">Leave Management</h2>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2"><img src="<?= BASE_URL ?>/public/emojis/Title%20emojis/leave.png" class="w-8 h-8" alt=""> Leave Management</h2>
             <p class="text-text-body font-body-md">Review and manage employee leave requests.</p>
         </div>
     </div>
@@ -90,4 +90,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['lea
         </div>
     </div>
 </div>
+<style>main{background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),url('<?= BASE_URL ?>/public/background/dashboard.jpeg') center/cover no-repeat fixed;min-height:100vh}</style>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
